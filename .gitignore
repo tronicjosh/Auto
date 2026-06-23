@@ -1,0 +1,27 @@
+# secrets
+.env
+*.key
+
+# generated output
+output/
+
+# logged web sessions (may contain proprietary datasheets)
+conversations/
+
+# runtime backups (workbook .bak from vocab write-back) + scratch scripts
+*.bak
+_tmp_*.py
+
+# IDE
+.idea/
+.vscode/
+
+# python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+.venv/
+venv/

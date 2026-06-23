@@ -1,0 +1,22 @@
+{
+  "manufacturer": "CommScope",
+  "model": "2NN2HH-33B-R4",
+  "type": "panel",
+  "height_m": 1.828,
+  "width_m": 0.64,
+  "depth_m": 0.235,
+  "sections": [
+    {"frequency": "750 MHz",      "minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 20", "ports": "1,2,5,6",   "azimuth": 27,  "gain_dbi": 13.7, "hbw_deg": 42, "vbw_deg": 23.7},
+    {"frequency": "850 MHz band", "minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 20", "ports": "1,2,5,6",   "azimuth": 27,  "gain_dbi": 14.8, "hbw_deg": 35, "vbw_deg": 21.5},
+    {"frequency": "1800 MHz band","minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 12", "ports": "9,10,13,14", "azimuth": 27,  "gain_dbi": 18.3, "hbw_deg": 33, "vbw_deg": 7.3},
+    {"frequency": "1.95 GHz",     "minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 12", "ports": "9,10,13,14", "azimuth": 27,  "gain_dbi": 19.1, "hbw_deg": 32, "vbw_deg": 6.9},
+    {"frequency": "2100 MHz band","minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 12", "ports": "9,10,13,14", "azimuth": 27,  "gain_dbi": 19.1, "hbw_deg": 32, "vbw_deg": 6.9},
+    {"frequency": "2.35 GHz",     "minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 12", "ports": "9,10,13,14", "azimuth": 27,  "gain_dbi": 19.1, "hbw_deg": 28, "vbw_deg": 6.3},
+    {"frequency": "750 MHz",      "minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 20", "ports": "3,4,7,8",    "azimuth": -27, "gain_dbi": 13.7, "hbw_deg": 42, "vbw_deg": 23.7},
+    {"frequency": "850 MHz band", "minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 20", "ports": "3,4,7,8",    "azimuth": -27, "gain_dbi": 14.8, "hbw_deg": 35, "vbw_deg": 21.5},
+    {"frequency": "1800 MHz band","minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 12", "ports": "11,12,15,16","azimuth": -27, "gain_dbi": 18.3, "hbw_deg": 33, "vbw_deg": 7.3},
+    {"frequency": "1.95 GHz",     "minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 12", "ports": "11,12,15,16","azimuth": -27, "gain_dbi": 19.1, "hbw_deg": 32, "vbw_deg": 6.9},
+    {"frequency": "2100 MHz band","minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 12", "ports": "11,12,15,16","azimuth": -27, "gain_dbi": 19.1, "hbw_deg": 32, "vbw_deg": 6.9},
+    {"frequency": "2.35 GHz",     "minFreqHz": "", "maxFreqHz": "", "tilts": "2 to 12", "ports": "11,12,15,16","azimuth": -27, "gain_dbi": 19.1, "hbw_deg": 28, "vbw_deg": 6.3}
+  ]
+}

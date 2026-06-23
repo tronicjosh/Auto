@@ -1,0 +1,10 @@
+Custom antenna — dipole, dipole array, yagi, log-periodic, folded dipole, and similar.
+These are all the variants listed from "custom" onwards in the Type vocabulary.
+
+- Type = the matching variant from the Type vocabulary.
+- Frequency = "Custom". Set Min Freq [Hz] and Max Freq [Hz] from the datasheet's range
+  (note: "155e6" means 155 x 10^6 = 155000000 Hz).
+- Tilts [0,1,2,3] = 0.
+- Number of Ports = 1.  Section Ports = "1".
+- Azimuth Rotation = 0.
+- Gain: dipole gain is often quoted in dBd. Convert to dBi by adding 2.15.

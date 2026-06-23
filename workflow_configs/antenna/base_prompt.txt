@@ -1,0 +1,116 @@
+You are transcribing an antenna datasheet into the IXUS RF-EMF batch sheet. Read the
+electrical specifications table, the radiation-pattern / port configuration, and the
+mechanical dimensions.
+
+The antenna type has already been identified as: [[PROFILE_NAME]]. Apply the type-specific
+rules in the PROFILE section at the bottom IN ADDITION TO the universal rules below.
+
+== UNIVERSAL RULES ==
+
+ROWS
+- Output ONE entry per unique (frequency band, beam/azimuth) combination. Every connector that
+  feeds that same band and beam goes into that single entry's port list — do NOT split one
+  band+beam into several rows by port.
+- If two rows would share the SAME frequency, the SAME azimuth, and the same gain / beamwidth /
+  tilt, they are the SAME entry: merge them into one row and combine their connector numbers
+  (e.g. ports "1,2" and "3,4" on the same band + beam become one row, 4 ports, "1,2,3,4").
+
+MODEL
+- Use the primary product model / part number shown prominently at the TOP of the datasheet
+  (its title or header) — e.g. "AMB4521R0v06". Do NOT use a descriptive type code, ordering
+  string, or pattern name from inside the spec tables (e.g. "3MX-1710-2200-22-21i-M-R").
+- "model" is a single value (never a list). By default, copy the model name EXACTLY as printed —
+  do NOT strip any characters, even if the ending looks like a polarisation code
+  (e.g. "CX20OMI224-3Hxy" stays "CX20OMI224-3Hxy").
+- ONLY collapse a suffix when the datasheet actually prints TWO OR MORE separate model names
+  that are identical except for a polarisation-state suffix (e.g. it lists both "854HVH90D-SX"
+  AND "854HVH90D-SY") — only then drop that suffix and use the common base ("854HVH90D"). If just
+  one model name appears, the previous rule applies: use it verbatim.
+
+PORTS
+- "ports" = the physical connector numbers feeding THIS entry (this frequency band + beam),
+  comma-separated with no spaces, e.g. "1,2,5,6". You only output this list — the
+  "Number of Ports" column is just HOW MANY connectors that is, counted automatically from your
+  list. So get the connector list right and the count takes care of itself.
+- A single physical connector is ONE port. Two RECEIVE ports shown together under the same
+  frequency (e.g. "Rx1" and "Rx2") are receive diversity on ONE connector — list it as one
+  port, not two.
+- The same connector number must not appear in two entries of the same frequency.
+
+FREQUENCY
+- Work through the IXUS standard bands in the band table below (each has a min and a max
+  frequency). INCLUDE an IXUS band as an entry whenever its [min, max] range OVERLAPS any part
+  of the datasheet's frequency coverage — even if the datasheet never names that band. A shared
+  BOUNDARY counts: if the band's edge exactly equals a datasheet band's edge (e.g. an IXUS band
+  ending at 803 and a datasheet band starting at 803), that is an overlap — include it. Check
+  EVERY band in the table; do not skip one just because the datasheet's labels don't mention
+  it. (Example: a datasheet covering 617-960 MHz overlaps the 650, 750, 850 and 900 bands, so
+  all four are included.)
+- A wide datasheet band can overlap several IXUS bands — include each overlapping IXUS band as
+  its own entry.
+- You do NOT need to choose the gain or beamwidths when an IXUS band overlaps several datasheet
+  columns — the SYSTEM does that for you. Instead, transcribe EVERY frequency column/band shown
+  on the datasheet into the "datasheet_bands" list: its frequency range in MHz (min_mhz,
+  max_mhz), its gain in dBi, and its horizontal and vertical HPBW. The system then picks, for
+  each IXUS band, the highest-gain overlapping column and fills that band's Gain / HPBW / VPBW
+  automatically. So transcribe the datasheet columns faithfully and completely (one entry per
+  column, in MHz). Include ADJACENT columns: if one column ends where the next begins (e.g. one
+  ending at 803 and another starting at 803), transcribe BOTH — the system compares their gains
+  for any IXUS band that touches that boundary.
+- For each section, set the frequency, tilts, ports and azimuth. For a STANDARD IXUS band the
+  system overwrites the section's gain / HPBW / VPBW from datasheet_bands; for a "Custom"
+  frequency there is no IXUS band to match, so fill the gain / HPBW / VPBW yourself.
+- Min Freq [Hz] and Max Freq [Hz] are filled ONLY when Frequency = "Custom" (a frequency that
+  is not one of IXUS's standard bands). For a standard band, leave both blank.
+
+VALUES
+- Transcribe gain, horizontal HPBW, vertical HPBW and tilt EXACTLY from the relevant column.
+  Never merge, average, or borrow values from a neighbouring column.
+- Copy every number at its FULL printed precision — never round or truncate (0.5207 stays
+  0.5207, not 0.521).
+- Tilts:
+    * A continuous electrical tilt RANGE -> "low to high" with the keyword "to" (e.g.
+      "2 to 20", "2 to 16").
+    * DISCRETE selectable tilt options (the datasheet lists specific values, e.g. "2 or 6 or
+      10 degrees") -> comma-separated, e.g. "2,6,10". This is a LIST, not a range.
+    * A single fixed tilt -> just the number (e.g. "6").
+    * No electrical tilt (zero / fixed down-tilt) -> "0". Never leave Tilts blank.
+- Gain is in dBi. If the datasheet already gives a dBi value, use that number DIRECTLY — do
+  NOT add 2.15. Only convert when the gain is given ONLY in dBd with no dBi equivalent (then
+  dBi = dBd + 2.15). The unit label applies to EVERY number beside it: "11.5/13.6 dBi" means
+  11.5 dBi AND 13.6 dBi (both already dBi — use as-is, then pick the higher per the rule below).
+- If MORE THAN ONE gain is given for the same entry (e.g. a general "Gain" and a type-specific
+  "Gain (Omni)"), always use the HIGHEST gain value regardless of its column label, and take
+  the horizontal and vertical HPBW from that same highest-gain figure.
+- Dimensions are in metres. Height = the long axis (often labelled "Length").
+- When a dimension is given as imperial with the metric value in parentheses
+  (e.g. "20.5 (520.7) x 96.5 (2,451) x 5.1 (129.5)" = inches with mm in brackets), USE the
+  millimetre value divided by 1000 — do NOT convert the inch value yourself. So
+  "5.1 (129.5)" -> 129.5 mm = 0.1295 m (NOT 5.1 x 0.0254). This applies to height, width and
+  depth alike. Take the mm figure exactly as printed (drop any thousands comma: "2,451" = 2451).
+- Aperture Diameter [m] is ONLY relevant for parabolic / dish antennas. For every other
+  antenna type, leave it blank ("").
+
+ALLOWED VALUES
+- Manufacturer, Type and Frequency must be EXACT entries from the lists provided below.
+- Use "" for anything genuinely absent. Do not guess.
+
+Frequency vocabulary: [[FREQUENCY_VOCAB]]
+
+Type vocabulary: [[TYPE_VOCAB]]
+
+Manufacturer vocabulary (choose exactly one for "manufacturer"): [[MANUFACTURERS_VOCAB]]
+
+[[BANDS]]
+
+== PROFILE: [[PROFILE_NAME]] ==
+[[PROFILE]]
+
+Respond ONLY with JSON, no markdown fences:
+{"manufacturer": str, "model": str, "type": str,
+ "height_m": num, "width_m": num, "depth_m": num, "aperture_m": num,
+ "datasheet_bands": [{"min_mhz": num, "max_mhz": num, "gain_dbi": num,
+                      "hbw_deg": num, "vbw_deg": num}],
+ "sections": [{"frequency": str, "minFreqHz": str, "maxFreqHz": str, "tilts": str,
+               "ports": str, "azimuth": num, "gain_dbi": num,
+               "hbw_deg": num, "vbw_deg": num}]}

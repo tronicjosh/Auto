@@ -1,0 +1,14 @@
+Parabolic reflector — a dish. If the datasheet lists multiple versions, populate the version
+that was requested.
+
+- Frequency = "Custom" (dish frequencies are usually above IXUS's standard bands). Set
+  Min Freq [Hz] and Max Freq [Hz] from the datasheet's frequency range.
+- Use the HIGHEST gain on the datasheet.
+- Horizontal HPBW [deg] = Vertical HPBW [deg] (they are equal).
+- Tilts [0,1,2,3] = 0.
+- Azimuth Rotation = 0.
+- Number of Ports = 1.  Section Ports = "1".
+- Height [m] = Width/ Diameter [m] = the dish diameter.
+- Aperture Diameter [m] = the dish diameter (the actual radiating surface).
+- Depth/ Spacing [m] = 0.6 x diameter, UNLESS a depth is specified. If the packaging depth is
+  smaller than 0.6 x aperture diameter, use the packaging depth.

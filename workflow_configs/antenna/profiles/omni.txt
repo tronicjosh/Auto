@@ -1,0 +1,23 @@
+Omni antenna — cylindrical / round radome (circular when viewed from the top); radiates in
+all azimuth directions. The horizontal pattern is a full circle (0 dB all around), so the
+dashed horizontal-pattern line is not visible on the plot.
+
+- Horizontal HPBW [deg] = 360.
+- Azimuth Rotation = 0 (covers the full 360 degrees).
+- Vertical HPBW [deg] = from the datasheet.
+- Gain: if the datasheet says "unity gain", that means 0 dBd = 2.15 dBi. Record
+  Gain [dBi] = 2.15.
+- Height [m] = the length of the RADIATING part, not the overall length. When the datasheet
+  gives both (e.g. "Overall Length" AND "Element Housing Length"), use the radiating /
+  element-housing length.
+- Width/ Diameter [m] = the DIAMETER. An omni is round, so the datasheet gives a diameter,
+  not a width — use that diameter here.
+- Depth/ Spacing [m] = the spacing gap between the BOTTOM of the antenna (where it mounts —
+  ignore the mounting hardware) and where the radiating part of the radome begins. If the
+  radiating part starts at the bottom (no gap), use 0. This is normally explicitly specified so if you have to infer rather just use 0 if unsure,
+  this will work for almost all cases.
+  IMPORTANT: mounting hardware BELOW the antenna — a "Support Pipe Length", mounting pipe,
+  support pole, or bracket — is NOT this gap. It sits beneath the antenna, not between the
+  mount and the radiating element. Ignore it completely and do NOT put it in Depth. The
+  radiating element housing normally starts at the very bottom of the antenna, so Depth = 0.
+- Aperture Diameter [m] = "" (omni antennas have no aperture).

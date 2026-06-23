@@ -1,0 +1,10 @@
+Lens antenna — PLACEHOLDER (rules not yet defined).
+
+The batch-sheet rules for lens antennas are not yet written — awaiting input from a senior
+engineer and the internal training video. Until this profile is filled in, a lens antenna
+is extracted using the universal rules in the base prompt only.
+
+To complete this profile, add:
+- Recognition cues for the router (how to tell a lens antenna apart from the others).
+- Any type-specific batch-sheet rules: ports, azimuth rotation, dimensions, aperture, tilts,
+  beamwidth handling, etc.

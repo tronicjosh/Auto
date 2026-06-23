@@ -1,0 +1,13 @@
+Antenna Source,Antenna manufacturer,Model,Type,Frequency,Min Freq [Hz],Max Freq [Hz],"Tilts [0,1,2,3]",Number of Ports,Section Ports,Azimuth Rotation,Gain [dBi],Horizontal HPBW [deg],Vertical HPBW [deg],Height [m],Width/ Diameter [m],Depth/ Spacing [m],Aperture Diameter [m]
+EMSS,CommScope,2NN2HH-33B-R4,panel,750 MHz,,,2 to 20,4,"1,2,5,6",27,13.7,42,23.7,1.828,0.64,0.235,
+EMSS,CommScope,2NN2HH-33B-R4,panel,850 MHz band,,,2 to 20,4,"1,2,5,6",27,14.8,35,21.5,1.828,0.64,0.235,
+EMSS,CommScope,2NN2HH-33B-R4,panel,1800 MHz band,,,2 to 12,4,"9,10,13,14",27,18.3,33,7.3,1.828,0.64,0.235,
+EMSS,CommScope,2NN2HH-33B-R4,panel,1.95 GHz,,,2 to 12,4,"9,10,13,14",27,19.1,32,6.9,1.828,0.64,0.235,
+EMSS,CommScope,2NN2HH-33B-R4,panel,2100 MHz band,,,2 to 12,4,"9,10,13,14",27,19.1,32,6.9,1.828,0.64,0.235,
+EMSS,CommScope,2NN2HH-33B-R4,panel,2.35 GHz,,,2 to 12,4,"9,10,13,14",27,19.1,28,6.3,1.828,0.64,0.235,
+EMSS,CommScope,2NN2HH-33B-R4,panel,750 MHz,,,2 to 20,4,"3,4,7,8",-27,13.7,42,23.7,1.828,0.64,0.235,
+EMSS,CommScope,2NN2HH-33B-R4,panel,850 MHz band,,,2 to 20,4,"3,4,7,8",-27,14.8,35,21.5,1.828,0.64,0.235,
+EMSS,CommScope,2NN2HH-33B-R4,panel,1800 MHz band,,,2 to 12,4,"11,12,15,16",-27,18.3,33,7.3,1.828,0.64,0.235,
+EMSS,CommScope,2NN2HH-33B-R4,panel,1.95 GHz,,,2 to 12,4,"11,12,15,16",-27,19.1,32,6.9,1.828,0.64,0.235,
+EMSS,CommScope,2NN2HH-33B-R4,panel,2100 MHz band,,,2 to 12,4,"11,12,15,16",-27,19.1,32,6.9,1.828,0.64,0.235,
+EMSS,CommScope,2NN2HH-33B-R4,panel,2.35 GHz,,,2 to 12,4,"11,12,15,16",-27,19.1,28,6.3,1.828,0.64,0.235,

@@ -1,0 +1,178 @@
+{
+  "id": "antenna",
+  "title": "Antenna Datasheet → IXUS Batch Sheet",
+  "description": "Extract a base-station antenna datasheet PDF into the IXUS RF-EMF batch workbook — validated, refine-by-chat, dropdowns preserved.",
+  "enabled": true,
+  "model": "claude-opus-4-8",
+  "classify_model": "claude-haiku-4-5",
+  "prompt_base": "base_prompt.txt",
+  "router_prompt": "router_prompt.txt",
+  "profiles": [
+    {"key": "panel", "label": "Panel"},
+    {"key": "omni", "label": "Omni"},
+    {"key": "lens", "label": "Lens"},
+    {"key": "parabolic", "label": "Parabolic reflector"},
+    {"key": "custom", "label": "Custom"}
+  ],
+  "template": "IXUS_antenna_batch_processor2 1.xlsx",
+  "output_sheet_name": "Descriptions",
+  "vocab_spec": {
+    "sheet": "Data_Validation",
+    "columns": {"A": "manufacturers", "C": "frequency", "E": "type", "G": "version", "I": "source"}
+  },
+  "mapping_spec": {
+    "row_source": "sections",
+    "columns": {
+      "Antenna Source": {"from": "source"},
+      "Antenna manufacturer": {"root": "manufacturer", "override": "manufacturer"},
+      "Model": {"root": "model", "override": "model_name"},
+      "Type": {"root": "type"},
+      "Frequency": {"field": "frequency"},
+      "Min Freq [Hz]": {"field": "minFreqHz", "transform": {"name": "blank_unless", "field": "frequency", "equals": "Custom"}},
+      "Max Freq [Hz]": {"field": "maxFreqHz", "transform": {"name": "blank_unless", "field": "frequency", "equals": "Custom"}},
+      "Tilts [0,1,2,3]": {"field": "tilts", "transform": "normalize_tilt"},
+      "Number of Ports": {"field": "ports", "transform": "count_ports"},
+      "Section Ports": {"field": "ports", "transform": "normalize_ports"},
+      "Azimuth Rotation": {"field": "azimuth"},
+      "Gain [dBi]": {"field": "gain_dbi"},
+      "Horizontal HPBW [deg]": {"field": "hbw_deg"},
+      "Vertical HPBW [deg]": {"field": "vbw_deg"},
+      "Height [m]": {"root": "height_m"},
+      "Width/ Diameter [m]": {"root": "width_m"},
+      "Depth/ Spacing [m]": {"root": "depth_m"},
+      "Aperture Diameter [m]": {"root": "aperture_m"}
+    }
+  },
+  "band_gain_spec": {
+    "source_field": "datasheet_bands",
+    "bands_section": "bands",
+    "unit": "mhz",
+    "freq_column": "Frequency",
+    "gain_column": "Gain [dBi]",
+    "hbw_column": "Horizontal HPBW [deg]",
+    "vbw_column": "Vertical HPBW [deg]"
+  },
+  "rules_spec": [
+    {"type": "in_vocab", "column": "Frequency", "vocab": "frequency", "message": "Not in Frequency vocabulary"},
+    {"type": "in_vocab", "column": "Type", "vocab": "type", "message": "Not in Type vocabulary"},
+    {"type": "equals_count", "column": "Number of Ports", "counts": "Section Ports"},
+    {"type": "only_when", "columns": ["Min Freq [Hz]", "Max Freq [Hz]"], "when_column": "Frequency", "when_equals": "Custom"},
+    {"type": "check", "name": "tilt_range", "column": "Tilts [0,1,2,3]"},
+    {"type": "check", "name": "gain_plausibility"},
+    {"type": "check", "name": "ports_unique_per_group"}
+  ],
+  "type_guardrails": {
+    "parabolic": [
+      {"column": "Tilts [0,1,2,3]", "equals": "0", "message": "Parabolic tilt should be 0"},
+      {"column": "Azimuth Rotation", "equals": "0", "message": "Parabolic azimuth should be 0"},
+      {"column": "Number of Ports", "equals": "1", "message": "Parabolic should have 1 port"},
+      {"column": "Aperture Diameter [m]", "required": true, "message": "Parabolic needs an aperture diameter"},
+      {"columns_equal": ["Horizontal HPBW [deg]", "Vertical HPBW [deg]"], "message": "Parabolic H and V beamwidth should be equal"}
+    ],
+    "custom": [
+      {"column": "Tilts [0,1,2,3]", "equals": "0", "message": "Custom tilt should be 0"},
+      {"column": "Number of Ports", "equals": "1", "message": "Custom should have 1 port"},
+      {"column": "Aperture Diameter [m]", "blank": true, "message": "Custom has no aperture"}
+    ],
+    "omni": [
+      {"column": "Horizontal HPBW [deg]", "equals": "360", "message": "Omni horizontal HPBW should be 360"},
+      {"column": "Azimuth Rotation", "equals": "0", "message": "Omni azimuth should be 0"},
+      {"column": "Aperture Diameter [m]", "blank": true, "message": "Omni has no aperture"}
+    ],
+    "panel": [
+      {"column": "Aperture Diameter [m]", "blank": true, "message": "Panel has no aperture"}
+    ]
+  },
+  "output_spec": {
+    "first_data_row": 2,
+    "last_template_row": 30,
+    "extend_columns": ["A", "B", "D"],
+    "extend_special": [
+      {"find": "E2:E21 E23 E25 E27", "template": "E2:E21 E23 E25 E27 E31:E{last}"}
+    ]
+  },
+  "ui": {
+    "header_title": "Antenna Datasheet Editor",
+    "header_subtitle": "Upload a base-station antenna datasheet, review the AI's draft, refine it by chat, and export the batch sheet.",
+    "upload_label": "Antenna datasheet (PDF)",
+    "table_title": "Extracted antenna rows",
+    "chat_title": "Refine with the model",
+    "chat_subtitle": "Describe what to change; the AI re-runs with the datasheet in context. Approve or revert each change."
+  },
+  "columns": [
+    "Antenna Source",
+    "Antenna manufacturer",
+    "Model",
+    "Type",
+    "Frequency",
+    "Min Freq [Hz]",
+    "Max Freq [Hz]",
+    "Tilts [0,1,2,3]",
+    "Number of Ports",
+    "Section Ports",
+    "Azimuth Rotation",
+    "Gain [dBi]",
+    "Horizontal HPBW [deg]",
+    "Vertical HPBW [deg]",
+    "Height [m]",
+    "Width/ Diameter [m]",
+    "Depth/ Spacing [m]",
+    "Aperture Diameter [m]"
+  ],
+  "numeric_columns": [
+    "Min Freq [Hz]",
+    "Max Freq [Hz]",
+    "Number of Ports",
+    "Azimuth Rotation",
+    "Gain [dBi]",
+    "Horizontal HPBW [deg]",
+    "Vertical HPBW [deg]",
+    "Height [m]",
+    "Width/ Diameter [m]",
+    "Depth/ Spacing [m]",
+    "Aperture Diameter [m]"
+  ],
+  "diff_key_columns": [
+    "Frequency",
+    "Section Ports",
+    "Azimuth Rotation"
+  ],
+  "rules": [
+    "Frequency must be one of the workbook's allowed bands.",
+    "Type must be one of the allowed antenna types.",
+    "Number of Ports must equal the count of Section Ports.",
+    "Min/Max Freq are only filled when Frequency = Custom.",
+    "Tilts are written as 'low to high' (e.g. 2 to 20).",
+    "Section Ports are comma-separated with no spaces (e.g. 1,2,5,6).",
+    "No port number may appear in two sections of the same Frequency.",
+    "Gain is sanity-checked against the beamwidths (directivity plausibility).",
+    "A frequency band is included when the datasheet's range overlaps the band's min/max."
+  ],
+  "config_sections": [
+    {
+      "key": "bands",
+      "title": "Frequency bands",
+      "help": "edge case — include a band when the datasheet's frequency range overlaps its min/max",
+      "inject_tag": "[[BANDS]]",
+      "intro": "Band frequency ranges — include a band if the datasheet's frequency coverage OVERLAPS its range:",
+      "row_template": "- {name}: {min_hz} to {max_hz} Hz",
+      "columns": [
+        {
+          "key": "name",
+          "label": "Band",
+          "type": "text"
+        },
+        {
+          "key": "min_hz",
+          "label": "Min (Hz)",
+          "type": "int"
+        },
+        {
+          "key": "max_hz",
+          "label": "Max (Hz)",
+          "type": "int"
+        }
+      ]
+    }
+  ]
+}

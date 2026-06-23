@@ -1,0 +1,23 @@
+Identify the antenna type for this datasheet. Use the radome shape, the radiation pattern,
+and the frequency range. Choose exactly one type:
+
+- Panel: a DIRECTIONAL antenna — it has one or more SECTORS / beams (directional lobes) and
+  does NOT radiate equally in all azimuth directions. Usually a rectangular radome, BUT a
+  cylindrical / canister radome that has sectors is still a Panel. The most common
+  base-station antenna; usually covers multiple bands and/or beams.
+
+- Omni: radiates EQUALLY in every azimuth direction — a single 360-degree horizontal pattern
+  with NO sectors and no directional lobes. Cylindrical / round radome (circular from the
+  top). Shape alone is NOT enough: a cylindrical/canister antenna that has SECTORS is a Panel,
+  not an Omni. Only call it Omni when the horizontal pattern is a full uniform circle.
+
+- Lens: a lens antenna. (Recognition cues to be added by the engineer.)
+
+- Parabolic reflector: a dish; usually very high frequency (GHz); a single narrow pencil
+  beam; circularly symmetric (horizontal and vertical beamwidth are equal).
+
+- Custom: anything that is not one of the four types above — dipole, dipole array, yagi,
+  log-periodic, folded dipole, etc. If it does not clearly match one of the above, choose
+  Custom.
+
+Respond with the chosen type and one sentence explaining why.

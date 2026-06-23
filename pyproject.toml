@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "antenna-reader"
+version = "0.1.0"
+description = "Read EMSS base-station antenna datasheets (PDF) into the IXUS batch Excel sheet via the Claude API."
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.45",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+dotenv = ["python-dotenv>=1"]
+web = ["fastapi>=0.110", "uvicorn>=0.27", "python-multipart>=0.0.9"]
+gui = ["PyQt5>=5.15"]
+
+[project.scripts]
+antenna-reader = "antenna_reader.cli:main"
+antenna-reader-web = "antenna_reader.web:run"
+antenna-reader-gui = "antenna_reader.gui:run_gui"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+antenna_reader = ["templates/*.html"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = [
+    "live: test hits the real Claude API (needs ANTHROPIC_API_KEY); run with -m live",
+]

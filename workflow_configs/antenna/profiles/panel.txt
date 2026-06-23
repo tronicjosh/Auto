@@ -1,0 +1,9 @@
+Panel antenna — rectangular radome, directional main beam. The most common base-station
+antenna; usually covers multiple bands and/or beams.
+
+- Ports: list the connector numbers feeding each band + beam (see the universal PORTS rule),
+  e.g. "1,2,5,6". The Number of Ports column is counted from that list automatically.
+- Multibeam: output one entry per beam, each with its azimuth offset (from "Beam Centers",
+  e.g. +/-27 -> two entries, azimuth 27 and azimuth -27).
+- Width/ Diameter [m] = the physical width.  Depth/ Spacing [m] = the physical depth.
+- Aperture Diameter [m] = "" (panel antennas have no aperture).
