@@ -11,8 +11,7 @@
     {"key": "panel", "label": "Panel"},
     {"key": "omni", "label": "Omni"},
     {"key": "lens", "label": "Lens"},
-    {"key": "parabolic", "label": "Parabolic reflector"},
-    {"key": "custom", "label": "Custom"}
+    {"key": "parabolic", "label": "Parabolic reflector"}
   ],
   "template": "IXUS_antenna_batch_processor2 1.xlsx",
   "output_sheet_name": "Descriptions",
@@ -68,11 +67,6 @@
       {"column": "Number of Ports", "equals": "1", "message": "Parabolic should have 1 port"},
       {"column": "Aperture Diameter [m]", "required": true, "message": "Parabolic needs an aperture diameter"},
       {"columns_equal": ["Horizontal HPBW [deg]", "Vertical HPBW [deg]"], "message": "Parabolic H and V beamwidth should be equal"}
-    ],
-    "custom": [
-      {"column": "Tilts [0,1,2,3]", "equals": "0", "message": "Custom tilt should be 0"},
-      {"column": "Number of Ports", "equals": "1", "message": "Custom should have 1 port"},
-      {"column": "Aperture Diameter [m]", "blank": true, "message": "Custom has no aperture"}
     ],
     "omni": [
       {"column": "Horizontal HPBW [deg]", "equals": "360", "message": "Omni horizontal HPBW should be 360"},

@@ -1,8 +1,11 @@
 """PyQt5 desktop GUI.
 
-Pick a datasheet folder -> the tool classifies the antenna type (you confirm/correct it) ->
+Pick a datasheet PDF -> the tool classifies the antenna type (you confirm/correct it) ->
 extracts -> writes the populated batch sheet IN PLACE at the configured path. Long-running
 model calls run on a worker thread so the window never freezes.
+
+Stage 1 has no in-app table: the result goes straight to the batch sheet, and you open that
+file to review it. The table view returns in stage 2 alongside the chat-refine feature.
 
 Run:  python -m antenna_reader.gui     (needs ANTHROPIC_API_KEY in env / .env)
 
@@ -11,6 +14,7 @@ so the same logic drops into the production PyQt5 repo unchanged.
 """
 
 import sys
+from pathlib import Path
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -21,10 +25,8 @@ except Exception:
     pass
 
 from . import settings
-from .session import DatasheetSession, classify_datasheet, find_datasheet
+from .session import DatasheetSession, classify_datasheet
 from .workflows import get_workflow
-
-_FLAG_BG = QtGui.QColor(255, 226, 226)
 
 
 class _Task(QtCore.QThread):
@@ -51,6 +53,7 @@ class MainWindow(QtWidgets.QWidget):
         self.session = None
         self.pdf_bytes = None
         self.pdf_path = None
+        self.written_path = None
         self.detected = None
         self._task = None
         self._build_ui()
@@ -67,7 +70,7 @@ class MainWindow(QtWidgets.QWidget):
         root.addWidget(self.config_lbl)
 
         top = QtWidgets.QHBoxLayout()
-        self.browse_btn = QtWidgets.QPushButton("Browse datasheet folder…")
+        self.browse_btn = QtWidgets.QPushButton("Browse for datasheet (PDF)…")
         self.browse_btn.clicked.connect(self.on_browse)
         top.addWidget(self.browse_btn)
         self.path_lbl = QtWidgets.QLabel("(no datasheet selected)")
@@ -78,7 +81,9 @@ class MainWindow(QtWidgets.QWidget):
             self.type_combo.addItem(p["label"], p["key"])
         self.type_combo.setEnabled(False)
         top.addWidget(self.type_combo)
-        self.extract_btn = QtWidgets.QPushButton("Confirm && Extract")
+        self.extract_btn = QtWidgets.QPushButton("Re-extract with type")
+        self.extract_btn.setToolTip("If the detected type was wrong, pick the correct one "
+                                    "and re-run the extraction.")
         self.extract_btn.setEnabled(False)
         self.extract_btn.clicked.connect(self.on_extract)
         top.addWidget(self.extract_btn)
@@ -89,10 +94,28 @@ class MainWindow(QtWidgets.QWidget):
         self.detect_lbl.setWordWrap(True)
         root.addWidget(self.detect_lbl)
 
-        self.table = QtWidgets.QTableWidget()
-        self.table.setColumnCount(len(self.workflow.columns))
-        self.table.setHorizontalHeaderLabels(self.workflow.columns)
-        root.addWidget(self.table, 1)
+        # No table in stage 1 — the result is written straight to the batch sheet, which the
+        # user opens to review. The table view returns in stage 2 with the chat-refine feature.
+        self.result_lbl = QtWidgets.QLabel("")
+        self.result_lbl.setWordWrap(True)
+        self.result_lbl.setTextFormat(QtCore.Qt.RichText)
+        self.result_lbl.setAlignment(QtCore.Qt.AlignTop)
+        self.result_lbl.setStyleSheet("font-size:13px;")
+        root.addWidget(self.result_lbl, 1)
+
+        btn_row = QtWidgets.QHBoxLayout()
+        self.open_btn = QtWidgets.QPushButton("Open batch sheet")
+        self.open_btn.setEnabled(False)
+        self.open_btn.clicked.connect(self.on_open_sheet)
+        btn_row.addWidget(self.open_btn)
+        self.retry_btn = QtWidgets.QPushButton("Retry save")
+        self.retry_btn.setToolTip("Re-save the last extraction to the batch sheet "
+                                  "(no API cost). Use after closing the file in Excel.")
+        self.retry_btn.setVisible(False)
+        self.retry_btn.clicked.connect(self._save)
+        btn_row.addWidget(self.retry_btn)
+        btn_row.addStretch(1)
+        root.addLayout(btn_row)
 
         bottom = QtWidgets.QHBoxLayout()
         self.status_lbl = QtWidgets.QLabel("Ready.")
@@ -115,40 +138,54 @@ class MainWindow(QtWidgets.QWidget):
 
     # --- actions ---
     def on_browse(self):
-        folder = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Select the datasheet folder", str(settings.datasheet_root()))
-        if not folder:
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Select the antenna datasheet", str(settings.datasheet_root()),
+            "PDF datasheets (*.pdf)")
+        if not path:
             return
         try:
-            self.pdf_path = find_datasheet(folder)
+            self.pdf_path = Path(path)
             self.pdf_bytes = self.pdf_path.read_bytes()
         except Exception as exc:
             self._error(str(exc))
             return
         self.path_lbl.setText(str(self.pdf_path))
+        self.detected = None
+        self.session = None
         self.detect_lbl.setText("")
-        self.table.setRowCount(0)
-        self._busy("Identifying antenna type…")
+        self.result_lbl.setText("")
+        self.open_btn.setEnabled(False)
+        # Step 1 of 2: classify. _on_classified chains straight into step 2 (extract).
+        self._busy("Step 1 of 2 — Identifying antenna type…")
         self._run(lambda: classify_datasheet(self.pdf_bytes, self.workflow,
                                              model=settings.classify_model_override()),
                   self._on_classified)
 
     def _on_classified(self, result):
         self.detected = result
-        self.type_combo.setEnabled(True)
         idx = self.type_combo.findData(result.get("key"))
         if idx >= 0:
-            self.type_combo.setCurrentIndex(idx)
-        self.detect_lbl.setText(f"Detected: {result.get('label') or '?'} — {result.get('reason', '')}")
+            self.type_combo.setCurrentIndex(idx)   # combo is still disabled during processing
+        # If the router's answer didn't map to one of the four types, fall back to the
+        # current selection so extraction always runs with a valid profile.
+        key, label = self.type_combo.currentData(), self.type_combo.currentText()
         c = result.get("cost") or {}
-        self._idle(f"Type identified (classify ${c.get('cost_usd', 0):.4f}). "
-                   f"Confirm or change the Type, then Extract.")
+        shown = result.get("label") or f"{label} (uncertain)"
+        self.detect_lbl.setText(
+            f"Detected type: <b>{shown}</b> "
+            f"(classify ${c.get('cost_usd', 0):.4f}) — {result.get('reason', '')}")
+        # Auto-continue into extraction with the detected type — no manual confirm step.
+        self._start_extract(key, label, step="Step 2 of 2 — ")
 
     def on_extract(self):
+        """Manual re-run after the user corrects the Type dropdown."""
         if not self.pdf_bytes:
             return
-        key, label = self.type_combo.currentData(), self.type_combo.currentText()
-        self._busy(f"Extracting as {label} — this can take a moment…")
+        self._start_extract(self.type_combo.currentData(), self.type_combo.currentText(),
+                            step="Re-extracting — ")
+
+    def _start_extract(self, key, label, step=""):
+        self._busy(f"{step}Extracting as {label} — this can take a moment…")
 
         def work():
             s = DatasheetSession(self.workflow, self.pdf_bytes, source="EMSS",
@@ -156,32 +193,78 @@ class MainWindow(QtWidgets.QWidget):
                                  classify_cost=(self.detected or {}).get("cost"),
                                  model=settings.extract_model_override())
             s.extract()
-            path = s.write(settings.batch_sheet_path())
-            return s, str(path)
+            return s            # extraction only — the (cheap, lock-prone) save is separate
 
         self._run(work, self._on_extracted)
 
-    def _on_extracted(self, result):
-        self.session, path = result
-        cur = self.session.current()
-        self._fill_table(cur["rows"], cur["flags"])
-        cost = self.session.cost()
-        self.cost_lbl.setText(f"cost ${cost['total_usd']:.4f} ({cost['n_calls']} calls)")
-        self._idle(f"Wrote {len(cur['rows'])} row(s) to the batch sheet:  {path}")
+    def _on_extracted(self, session):
+        self.session = session   # keep it so a failed save can be retried without re-extracting
+        self._save()
 
-    def _fill_table(self, rows, flags):
-        cols = self.workflow.columns
-        self.table.setRowCount(len(rows))
-        for r, row in enumerate(rows):
-            row_flags = flags[r] if r < len(flags) else {}
-            for c, col in enumerate(cols):
-                item = QtWidgets.QTableWidgetItem(str(row.get(col, "")))
-                msg = (row_flags or {}).get(col)
-                if msg:
-                    item.setBackground(_FLAG_BG)
-                    item.setToolTip(msg)
-                self.table.setItem(r, c, item)
-        self.table.resizeColumnsToContents()
+    def _save(self):
+        """Write the current session to the batch sheet. A file-lock error is recoverable:
+        the extraction stays in memory and the user can Retry save after closing Excel."""
+        if self.session is None:
+            return
+        self._busy("Saving to the batch sheet…")
+        try:
+            self.written_path = str(self.session.write(settings.batch_sheet_path()))
+        except (PermissionError, OSError) as exc:
+            self._on_save_failed(exc)
+            return
+        self.retry_btn.setVisible(False)
+        self._show_result()
+
+    def _on_save_failed(self, exc):
+        path = settings.batch_sheet_path()
+        self.result_lbl.setText(
+            "<span style='color:#b00;'><b>Could not save the batch sheet.</b></span><br>"
+            f"<span style='color:#555;'>{path}</span><br><br>"
+            "This usually means the file is <b>open in Excel</b>. Close it, then click "
+            "<b>Retry save</b> — your extraction is kept, so retrying costs nothing.<br><br>"
+            f"<span style='color:#888;'>Details: {exc}</span>")
+        self.cost_lbl.setText("")
+        self.open_btn.setEnabled(False)
+        self.retry_btn.setVisible(True)
+        self.retry_btn.setEnabled(True)
+        self._idle("Save failed — close the file in Excel, then click “Retry save”.")
+
+    def _show_result(self):
+        cur = self.session.current()
+        rows, flags = cur["rows"], cur["flags"]
+        n_fields = sum(1 for rf in flags for v in (rf or {}).values() if v)
+        n_rows_flagged = sum(1 for rf in flags if rf and any((rf or {}).values()))
+
+        cost = self.session.cost()
+        classify_usd = (cost.get("classify") or {}).get("cost_usd", 0.0)
+        extract_usd = sum(c.get("cost_usd", 0.0) for c in cost.get("calls", []))
+        self.cost_lbl.setText(f"total ${cost['total_usd']:.4f}")
+
+        parts = [
+            f"<b>✓ Wrote {len(rows)} row(s)</b> to the batch sheet:",
+            f"<span style='color:#555;'>{self.written_path}</span>",
+            "",
+            "<b>Cost this run</b>",
+            f"&nbsp;&nbsp;classify (router):&nbsp; ${classify_usd:.4f}",
+            f"&nbsp;&nbsp;extract:&nbsp; ${extract_usd:.4f}",
+            f"&nbsp;&nbsp;<b>total:&nbsp; ${cost['total_usd']:.4f}</b> "
+            f"<span style='color:#888;'>({cost['n_calls']} API calls)</span>",
+            "",
+        ]
+        if n_fields:
+            parts.append(
+                f"<span style='color:#b00;'>⚠ {n_fields} field(s) across {n_rows_flagged} "
+                "row(s) were flagged as uncertain.</span> Open the batch sheet to review them.")
+        else:
+            parts.append("No fields were flagged — open the batch sheet to confirm.")
+        self.result_lbl.setText("<br>".join(parts))
+        self.open_btn.setEnabled(True)
+        self._idle("Done — if the detected type is wrong, pick the correct one above and "
+                   "click “Re-extract with type”.")
+
+    def on_open_sheet(self):
+        path = self.written_path or settings.batch_sheet_path()
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(str(path)))
 
     # --- task plumbing ---
     def _run(self, fn, on_done):
@@ -194,16 +277,22 @@ class MainWindow(QtWidgets.QWidget):
         self.status_lbl.setText(msg)
         self.browse_btn.setEnabled(False)
         self.extract_btn.setEnabled(False)
+        self.type_combo.setEnabled(False)   # locked while classifying/extracting
+        self.retry_btn.setVisible(False)
 
-    def _idle(self, msg):
+    def _set_idle(self, msg):
         self.status_lbl.setText(msg)
         self.browse_btn.setEnabled(True)
-        self.extract_btn.setEnabled(self.detected is not None)
+        # Type correction + re-extract unlock only after a first extraction has landed.
+        ready = self.session is not None
+        self.type_combo.setEnabled(ready)
+        self.extract_btn.setEnabled(ready)
+
+    def _idle(self, msg):
+        self._set_idle(msg)
 
     def _error(self, msg):
-        self.status_lbl.setText("Error: " + msg)
-        self.browse_btn.setEnabled(True)
-        self.extract_btn.setEnabled(self.detected is not None)
+        self._set_idle("Error: " + msg)
 
 
 def run_gui():

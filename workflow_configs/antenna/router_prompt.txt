@@ -16,8 +16,7 @@ and the frequency range. Choose exactly one type:
 - Parabolic reflector: a dish; usually very high frequency (GHz); a single narrow pencil
   beam; circularly symmetric (horizontal and vertical beamwidth are equal).
 
-- Custom: anything that is not one of the four types above — dipole, dipole array, yagi,
-  log-periodic, folded dipole, etc. If it does not clearly match one of the above, choose
-  Custom.
+These four are the only valid choices. If the datasheet is ambiguous, choose the CLOSEST of
+the four — do not invent any other type.
 
 Respond with the chosen type and one sentence explaining why.

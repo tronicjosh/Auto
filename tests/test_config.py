@@ -43,7 +43,7 @@ def test_build_prompt_is_profile_aware():
 
 def test_workflow_exposes_router_profiles_and_guardrails():
     wf = get_workflow("antenna")
-    assert [p["key"] for p in wf.extras["profiles"]] == ["panel", "omni", "lens", "parabolic", "custom"]
+    assert [p["key"] for p in wf.extras["profiles"]] == ["panel", "omni", "lens", "parabolic"]
     assert wf.extras["router_prompt"]
     assert wf.extras["classify_model"] == "claude-haiku-4-5"
     assert "parabolic" in wf.extras["type_guardrails"]
