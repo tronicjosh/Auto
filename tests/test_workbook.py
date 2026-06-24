@@ -3,8 +3,10 @@ import re
 import zipfile
 from pathlib import Path
 
-from antenna_reader.config import TEMPLATE_PATH
+from antenna_reader import settings
 from antenna_reader.workbook import verify_output, write_populated
+
+TEMPLATE_PATH = settings.template_path()   # the fixture workbook (IXUS_TEMPLATE set in conftest)
 
 
 def _sha(path):

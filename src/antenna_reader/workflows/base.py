@@ -8,8 +8,9 @@ not a rewrite of the app.
 """
 
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Callable
+
+from ..engine import dot_decimals
 
 
 @dataclass(frozen=True)
@@ -21,7 +22,6 @@ class Workflow:
 
     # --- generic config ---
     model: str
-    template_path: Path
     output_sheet_name: str
     columns: list
     numeric_columns: frozenset
@@ -53,6 +53,7 @@ class Workflow:
         rows = self.sections_to_rows(data, manufacturer, model_name, source)
         if self.adjust_rows is not None:
             rows = self.adjust_rows(rows, data)
+        dot_decimals(rows, self.numeric_columns)   # decimals use '.', never ',' (numeric cells)
         flags = self.validate_rows(rows, vocab)
         return rows, flags
 

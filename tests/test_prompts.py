@@ -41,7 +41,7 @@ def test_profiles_are_distinct_and_carry_their_rules():
     assert panel != omni != parabolic
     assert "rectangular radome" in panel        # panel's own rule
     assert "360" in omni                        # omni HPBW rule
-    assert "dish diameter" in parabolic         # parabolic rule
+    assert "boresight" in parabolic             # parabolic rule
     assert "rectangular radome" not in parabolic  # no cross-contamination
 
 

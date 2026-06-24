@@ -13,7 +13,8 @@ def sections_to_rows(data: dict, manufacturer: str = "", model_name: str = "",
     ever taken from the caller — there is no hard-coded default here.
     """
     manufacturer = (manufacturer or to_cell_str(data.get("manufacturer"))).strip()
-    model = (model_name or to_cell_str(data.get("model"))).strip()
+    # '/' has special meaning to the downstream file-path program, so store it as '-'.
+    model = (model_name or to_cell_str(data.get("model"))).strip().replace("/", "-")
     ant_type = to_cell_str(data.get("type"))
     height = to_cell_str(data.get("height_m"))
     width = to_cell_str(data.get("width_m"))

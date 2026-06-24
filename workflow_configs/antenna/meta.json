@@ -10,10 +10,9 @@
   "profiles": [
     {"key": "panel", "label": "Panel"},
     {"key": "omni", "label": "Omni"},
-    {"key": "lens", "label": "Lens"},
+    {"key": "lens", "label": "Lens", "supported": false},
     {"key": "parabolic", "label": "Parabolic reflector"}
   ],
-  "template": "IXUS_antenna_batch_processor2 1.xlsx",
   "output_sheet_name": "Descriptions",
   "vocab_spec": {
     "sheet": "Data_Validation",
@@ -24,7 +23,7 @@
     "columns": {
       "Antenna Source": {"from": "source"},
       "Antenna manufacturer": {"root": "manufacturer", "override": "manufacturer"},
-      "Model": {"root": "model", "override": "model_name"},
+      "Model": {"root": "model", "override": "model_name", "transform": "slash_to_dash"},
       "Type": {"root": "type"},
       "Frequency": {"field": "frequency"},
       "Min Freq [Hz]": {"field": "minFreqHz", "transform": {"name": "blank_unless", "field": "frequency", "equals": "Custom"}},
@@ -58,7 +57,7 @@
     {"type": "only_when", "columns": ["Min Freq [Hz]", "Max Freq [Hz]"], "when_column": "Frequency", "when_equals": "Custom"},
     {"type": "check", "name": "tilt_range", "column": "Tilts [0,1,2,3]"},
     {"type": "check", "name": "gain_plausibility"},
-    {"type": "check", "name": "ports_unique_per_group"}
+    {"type": "check", "name": "ports_unique_per_group", "subkeys": ["Min Freq [Hz]", "Max Freq [Hz]"]}
   ],
   "type_guardrails": {
     "parabolic": [

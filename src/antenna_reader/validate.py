@@ -74,7 +74,10 @@ def validate_rows(rows: list[dict], vocab: dict) -> list[dict]:
                 )
 
         if freq:
-            freq_ports.setdefault(freq, []).append((i, ports))
+            # Two "Custom" rows with different Min/Max Freq are different bands, so a shared
+            # port between them is not a clash — include the range in the grouping key.
+            key = (freq, row.get("Min Freq [Hz]", "").strip(), row.get("Max Freq [Hz]", "").strip())
+            freq_ports.setdefault(key, []).append((i, ports))
 
     # No port number may appear in two sections of the same Frequency value.
     for entries in freq_ports.values():

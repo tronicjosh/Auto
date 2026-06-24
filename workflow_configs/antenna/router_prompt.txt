@@ -11,7 +11,9 @@ and the frequency range. Choose exactly one type:
   top). Shape alone is NOT enough: a cylindrical/canister antenna that has SECTORS is a Panel,
   not an Omni. Only call it Omni when the horizontal pattern is a full uniform circle.
 
-- Lens: a lens antenna. (Recognition cues to be added by the engineer.)
+- Lens: a lens antenna — e.g. a Matsing / Luneburg spherical (ball-shaped) lens, often a sphere
+  or stack of spheres that forms several independent beams. If the antenna is a lens (especially
+  a Matsing lens), classify it as Lens.
 
 - Parabolic reflector: a dish; usually very high frequency (GHz); a single narrow pencil
   beam; circularly symmetric (horizontal and vertical beamwidth are equal).

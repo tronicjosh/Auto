@@ -28,7 +28,6 @@ from ..workbook import write_populated
 from .base import Workflow
 
 CONFIG_ROOT = PROJECT_ROOT / "workflow_configs"
-TEMPLATE_DIR = PROJECT_ROOT / "data" / "template"
 
 _TAG_RE = re.compile(r"\[\[[A-Z0-9_]+\]\]")  # leftover tags get cleared so none reach the model
 
@@ -162,7 +161,6 @@ def load_workflow(config_dir, *, read_vocab=None, sections_to_rows=None, validat
         title=meta["title"],
         description=meta["description"],
         model=meta.get("model", DEFAULT_MODEL),
-        template_path=TEMPLATE_DIR / meta["template"],
         output_sheet_name=meta["output_sheet_name"],
         columns=columns,
         numeric_columns=numeric_columns,
@@ -180,7 +178,8 @@ def load_workflow(config_dir, *, read_vocab=None, sections_to_rows=None, validat
             "section_data": section_data,
             "rules": meta.get("rules", []),
             "config_dir": config_dir.relative_to(PROJECT_ROOT).as_posix(),
-            "profiles": [{"key": p["key"], "label": profile_labels[p["key"]]} for p in profiles_meta],
+            "profiles": [{"key": p["key"], "label": profile_labels[p["key"]],
+                          "supported": p.get("supported", True)} for p in profiles_meta],
             "router_prompt": router_prompt,
             "classify_model": meta.get("classify_model", DEFAULT_CLASSIFY_MODEL),
             "type_guardrails": meta.get("type_guardrails", {}),

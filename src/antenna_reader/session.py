@@ -7,6 +7,7 @@ so the dependency direction is always GUI -> session -> engine.
 
 from pathlib import Path
 
+from . import settings
 from .classify import classify_antenna
 from .conversation import Conversation
 from .engine import apply_type_guardrails
@@ -46,7 +47,7 @@ class DatasheetSession:
         self.profile_key = profile_key
         self.profile_label = profile_label
         self.classify_cost = classify_cost
-        self.vocab = workflow.read_vocab(workflow.template_path)
+        self.vocab = workflow.read_vocab(settings.template_path())
         self.conv = Conversation(
             pdf_bytes, self.vocab, manufacturer=manufacturer, model_name=model_name,
             model=model or workflow.model, api_key=api_key,
@@ -120,7 +121,7 @@ class DatasheetSession:
         """Populate the batch sheet at `path` (dropdowns preserved) from the current rows."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        self.workflow.write_output(self.workflow.template_path, self.current_rows(), path)
+        self.workflow.write_output(settings.template_path(), self.current_rows(), path)
         return path
 
     # --- cost ---

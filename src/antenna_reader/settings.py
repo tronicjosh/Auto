@@ -9,17 +9,20 @@ key lives only in the environment.
                           (prod: C:\\alphawave\\...\\IXUS_antenna_batch_processor.xlsx)
     IXUS_TEMPLATE         the source workbook (dropdowns/hidden sheets) extraction copies from
     IXUS_DATASHEET_ROOT   folder the "browse for datasheet folder" picker opens at
-    IXUS_EXTRACT_MODEL    override the extraction model (default from config.py)
-    IXUS_CLASSIFY_MODEL   override the router/classification model
+
+The extraction/classification MODELS are not configured here — they live in the workflow config
+(workflow_configs/antenna/meta.json: "model" / "classify_model"), so the model travels with the
+prompts it was tuned for.
 """
 
 import os
 from pathlib import Path
 
-from .config import TEMPLATE_PATH
-
 # Dev default while running locally in the vscode project; in production this is the env var.
 _DEV_BATCH_SHEET = Path.home() / "Desktop" / "CAD" / "IXUS_antenna_batch.xlsx"
+
+# Shown when IXUS_TEMPLATE is unset, so the missing-template error is self-explanatory.
+_TEMPLATE_UNSET = "IXUS_TEMPLATE-is-not-set.xlsx"
 
 
 def api_key() -> str:
@@ -36,22 +39,16 @@ def batch_sheet_path() -> Path:
 
 
 def template_path() -> Path:
-    """The source workbook extraction copies dropdowns/structure from."""
-    return Path(os.environ.get("IXUS_TEMPLATE", str(TEMPLATE_PATH)))
+    """The source workbook extraction copies dropdowns/structure from.
+
+    Supplied at runtime via IXUS_TEMPLATE — there is no bundled template in the project.
+    """
+    return Path(os.environ.get("IXUS_TEMPLATE", _TEMPLATE_UNSET))
 
 
 def datasheet_root() -> Path:
     """Where the 'browse for datasheet folder' dialog opens."""
     return Path(os.environ.get("IXUS_DATASHEET_ROOT", str(Path.home() / "Desktop")))
-
-
-def extract_model_override() -> str | None:
-    """Optional env override; None means 'use the workflow's configured model' (meta.json)."""
-    return os.environ.get("IXUS_EXTRACT_MODEL") or None
-
-
-def classify_model_override() -> str | None:
-    return os.environ.get("IXUS_CLASSIFY_MODEL") or None
 
 
 def summary() -> dict:
@@ -61,6 +58,4 @@ def summary() -> dict:
         "batch_sheet": str(batch_sheet_path()),
         "template": str(template_path()),
         "datasheet_root": str(datasheet_root()),
-        "extract_model_override": extract_model_override(),
-        "classify_model_override": classify_model_override(),
     }

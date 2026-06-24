@@ -13,6 +13,7 @@ per-workflow Python is needed for the common case.
 """
 
 import math
+import re
 
 from .util import normalize_ports, normalize_tilt, parse_ports, parse_tilt_range, to_cell_str, to_float
 
@@ -38,11 +39,18 @@ def _t_blank_unless(raw, ctx, p):
     return to_cell_str(raw) if other == str(p.get("equals", "")).strip().lower() else ""
 
 
+def _t_slash_to_dash(raw, ctx, p):
+    """A '/' has special meaning to the downstream file-path program, so store it as '-'
+    (e.g. "KRE 101 2524/1MU" -> "KRE 101 2524-1MU")."""
+    return to_cell_str(raw).replace("/", "-")
+
+
 TRANSFORMS = {
     "normalize_tilt": _t_normalize_tilt,
     "normalize_ports": _t_normalize_ports,
     "count_ports": _t_count_ports,
     "blank_unless": _t_blank_unless,
+    "slash_to_dash": _t_slash_to_dash,
 }
 
 
@@ -77,6 +85,23 @@ def generic_map_rows(data, spec, manufacturer="", model_name="", source=""):
         ctx = {"item": item, "data": data}
         rows.append({col: _resolve(rule, data, item, overrides, ctx)
                      for col, rule in colrules.items()})
+    return rows
+
+
+_DECIMAL_COMMA = re.compile(r"-?\d+,\d+")
+
+
+def dot_decimals(rows, numeric_columns):
+    """Decimals always use a '.', never a ','. In a NUMERIC column a comma can only be a decimal
+    separator (list columns like Section Ports / Tilts are never numeric), so "12,5" -> "12.5"
+    and "0,521" -> "0.521". Only a clean digits,digits value is converted; anything else is left
+    untouched. Mutates and returns rows.
+    """
+    for row in rows:
+        for col in numeric_columns:
+            v = row.get(col)
+            if v is not None and _DECIMAL_COMMA.fullmatch(str(v).strip()):
+                row[col] = str(v).strip().replace(",", ".")
     return rows
 
 
@@ -120,11 +145,15 @@ def _check_gain_plausibility(rows, vocab, flags, p):
 
 def _check_ports_unique_per_group(rows, vocab, flags, p):
     group_col, ports_col = p.get("group", "Frequency"), p.get("ports", "Section Ports")
+    # Extra columns that further distinguish a group: two "Custom" rows with different
+    # Min/Max Freq are different frequency bands, so a shared port is NOT a clash.
+    subkeys = p.get("subkeys", [])
     groups = {}
     for i, row in enumerate(rows):
         key = row.get(group_col, "").strip()
         if key:
-            groups.setdefault(key, []).append((i, parse_ports(row.get(ports_col, ""))))
+            full = (key,) + tuple(row.get(c, "").strip() for c in subkeys)
+            groups.setdefault(full, []).append((i, parse_ports(row.get(ports_col, ""))))
     for entries in groups.values():
         seen, clashing = {}, set()
         for ri, ports in entries:
@@ -189,14 +218,27 @@ def generic_validate(rows, vocab, spec):
     return flags
 
 
+def _ranges_overlap(a, b):
+    """Two inclusive [lo, hi] ranges overlap (a shared boundary counts)."""
+    return a[1] >= b[0] and a[0] <= b[1]
+
+
 def select_overlapping_band_gains(rows, data, bands, spec):
-    """Deterministically set each standard-band row's Gain/HPBW/VPBW from the OVERLAPPING
-    datasheet column with the HIGHEST gain.
+    """Make REAL numeric overlap with the datasheet — not the model's judgement — govern which
+    standard IXUS bands appear, and fill their Gain/HPBW/VPBW:
+      * a standard-band row is KEPT only if its [min,max] overlaps a datasheet column; one that
+        overlaps nothing is DROPPED (the band is not on the datasheet);
+      * a kept row's Gain/HPBW/VPBW come from the OVERLAPPING column with the HIGHEST gain;
+      * any IXUS band that overlaps a column but the model OMITTED is ADDED — cloning its
+        ports/tilts/azimuth/identity from the existing standard-band row that shares that column
+        (bands over the same column share a port group).
 
     The model transcribes the raw datasheet frequency columns (range in MHz + gain + beamwidths)
-    into `data[source_field]`; this code does the overlap + max-gain selection that the model is
-    unreliable at. Rows whose IXUS band has no overlapping column — and "Custom" rows — keep the
-    model's own values, so a missing/blank transcription degrades gracefully.
+    into `data[source_field]`; this code does the overlap-based inclusion + max-gain selection the
+    model is unreliable at, so the *code* — not the model — decides the band set. "Custom" /
+    unknown-band rows are kept untouched. If the model transcribed NO columns there is nothing to
+    judge against, so all rows are kept (graceful degradation); and a band is only added when a
+    standard-band row exists to clone the port group from, otherwise it is left out, not guessed.
     """
     raw = data.get(spec.get("source_field", "datasheet_bands")) or []
     scale = 1_000_000 if spec.get("unit", "mhz") == "mhz" else 1
@@ -209,24 +251,61 @@ def select_overlapping_band_gains(rows, data, bands, spec):
             lo, hi = hi, lo
         cols.append((lo * scale, hi * scale, g, b.get("hbw_deg"), b.get("vbw_deg")))
     if not cols:
-        return rows
+        return rows  # nothing transcribed -> can't judge overlap; keep the model's rows as-is
 
     band_minmax = {b["name"]: (b.get("min_hz"), b.get("max_hz")) for b in bands}
     fc = spec.get("freq_column", "Frequency")
     gc, hc, vc = spec.get("gain_column"), spec.get("hbw_column"), spec.get("vbw_column")
+
+    def overlapping_cols(rng):
+        return [c for c in cols if _ranges_overlap((c[0], c[1]), rng)]
+
+    def fill(row, best):
+        row[gc], row[hc], row[vc] = to_cell_str(best[2]), to_cell_str(best[3]), to_cell_str(best[4])
+
+    def best_col(ov):
+        # Highest gain; on a GAIN TIE, the LARGER horizontal beamwidth (c[3]) wins.
+        def hbw(c):
+            v = to_float(c[3])
+            return v if v is not None else float("-inf")
+        return max(ov, key=lambda c: (c[2], hbw(c)))
+
+    # Pass 1 — keep Custom/unknown; drop non-overlapping standard bands; fill kept ones' gains.
+    kept, present = [], set()
     for row in rows:
-        rng = band_minmax.get(row.get(fc, "").strip())
+        name = row.get(fc, "").strip()
+        rng = band_minmax.get(name)
         if not rng or rng[0] is None or rng[1] is None:
-            continue  # Custom or unknown band -> leave the model's values
-        blo, bhi = rng
-        overlapping = [c for c in cols if c[1] >= blo and c[0] <= bhi]
-        if not overlapping:
+            kept.append(row)              # Custom / unknown band -> keep, with the model's values
             continue
-        best = max(overlapping, key=lambda c: c[2])  # highest gain
-        row[gc] = to_cell_str(best[2])
-        row[hc] = to_cell_str(best[3])
-        row[vc] = to_cell_str(best[4])
-    return rows
+        ov = overlapping_cols(rng)
+        if not ov:
+            continue                       # defined band does NOT overlap -> exclude this row
+        fill(row, best_col(ov))
+        kept.append(row)
+        present.add(name)
+
+    # Pass 2 — add any IXUS band that overlaps a column but the model left out.
+    std_rows = [r for r in kept if r.get(fc, "").strip() in band_minmax]
+    if std_rows:
+        for b in bands:
+            name = b["name"]
+            if name in present or b.get("min_hz") is None or b.get("max_hz") is None:
+                continue
+            ov = overlapping_cols((b["min_hz"], b["max_hz"]))
+            if not ov:
+                continue
+            best = best_col(ov)
+            # Clone from a sibling whose band shares this column (same port group); else the first.
+            donor = next((r for r in std_rows
+                          if _ranges_overlap(band_minmax[r[fc].strip()], (best[0], best[1]))),
+                         std_rows[0])
+            new = dict(donor)             # identity, dimensions, ports, tilts, azimuth, blank min/max
+            new[fc] = name
+            fill(new, best)
+            kept.append(new)
+            present.add(name)
+    return kept
 
 
 def apply_type_guardrails(rows, flags, guardrails):

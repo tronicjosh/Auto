@@ -1,17 +1,22 @@
 import csv
 import json
+import os
 from pathlib import Path
 
 import pytest
 
-from antenna_reader.config import TEMPLATE_PATH
-
 FIXTURES = Path(__file__).parent / "fixtures"
+
+# The template is no longer bundled in the project — production supplies it via IXUS_TEMPLATE.
+# Point the env var at the fixture workbook so the writer/vocab tests have a real one to use.
+# (setdefault runs at conftest import, before any test imports antenna_reader.)
+os.environ.setdefault("IXUS_TEMPLATE", str(FIXTURES / "ixus_template.xlsx"))
 
 
 @pytest.fixture
 def template_path():
-    return TEMPLATE_PATH
+    from antenna_reader import settings
+    return settings.template_path()
 
 
 @pytest.fixture

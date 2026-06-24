@@ -1,14 +1,44 @@
 Parabolic reflector — a dish. If the datasheet lists multiple versions, populate the version
 that was requested.
 
-- Frequency = "Custom" (dish frequencies are usually above IXUS's standard bands). Set
-  Min Freq [Hz] and Max Freq [Hz] from the datasheet's frequency range.
-- Use the HIGHEST gain on the datasheet.
+- Frequency = "Custom" (dish frequencies are usually above IXUS's standard bands).
+- ONE entry PER operating frequency band. If the datasheet shows a single "Operating Frequency
+  Band", output ONE entry. If it shows TWO OR MORE separate operating frequency bands (e.g. the
+  "Operating Frequency Band" row appears more than once, or there are sections labelled
+  "Band 1" / "Electrical Specifications, Band 2"), output ONE separate entry for EACH band.
+- For each entry, set Min Freq [Hz] and Max Freq [Hz] from THAT band's own frequency range
+  (e.g. "5.925 – 7.125 GHz" -> min 5925000000, max 7125000000).
+- Gain [dBi] for each entry = the HIGHEST gain listed WITHIN THAT band only (e.g. the largest of
+  that band's "Gain, Low/Mid/Top Band" figures). Never borrow a gain from another band; if a band
+  lists only one gain, use it. Example: a band listing 40.8 / 41.6 / 42.4 dBi -> 42.4; a second
+  band listing only 40.7 dBi -> 40.7.
+- Horizontal HPBW and Vertical HPBW for each entry come from that same band (and are equal).
 - Horizontal HPBW [deg] = Vertical HPBW [deg] (they are equal).
 - Tilts [0,1,2,3] = 0.
 - Azimuth Rotation = 0.
 - Number of Ports = 1.  Section Ports = "1".
-- Height [m] = Width/ Diameter [m] = the dish diameter.
-- Aperture Diameter [m] = the dish diameter (the actual radiating surface).
-- Depth/ Spacing [m] = 0.6 x diameter, UNLESS a depth is specified. If the packaging depth is
-  smaller than 0.6 x aperture diameter, use the packaging depth.
+DIMENSIONS — a parabolic datasheet often gives these in a DIMENSIONED OUTLINE DRAWING: a
+picture of the dish with lettered dimensions (A, B, C, D1, ...) and a table listing inches (mm)
+for each letter, plus an "Antenna size" column. When such a drawing is present, READ IT and
+reason about the geometry — do not guess or assume a value is missing.
+- Aperture Diameter [m] = the nominal reflector / antenna size (the actual radiating dish
+  surface). This is the "Antenna size", usually given as feet (metres), e.g. "8 ft (2.4 m)" or
+  a table column "Antenna size, ft (m)" with "8 (2.4)" -> use the bracketed METRE value
+  DIRECTLY = 2.4 (it is already in metres here, do NOT divide by 1000). Usually a clean round
+  number.
+- Height [m] = Width [m] = the OVERALL physical diameter of the dish/radome. On the drawing this
+  is the dimension marked with the diameter symbol Φ (e.g. ΦA); take its MILLIMETRE value from
+  the table and divide by 1000 (e.g. A = 95.1 (2416) -> 2.416 m). It is normally slightly LARGER
+  than the nominal aperture because it includes the rim/radome — so do NOT just copy the aperture
+  value; find the actual Φ diameter dimension. Only if NO separate overall/Φ diameter is given,
+  use the nominal aperture diameter for height and width too.
+- Depth/ Spacing [m]: on a dimensioned drawing the depth IS given even though it is not labelled
+  "depth". It is the AXIAL dimension — the one running front-to-back along the antenna's pointing
+  (boresight) axis and spanning the body/shroud of the dish. It is NOT the Φ diameter and NOT a
+  small mounting-bracket dimension. Work out from the drawing which lettered dimension runs along
+  the axis across the dish body and use its millimetre value / 1000 (in the worked example the
+  depth is E = 42.4 (1078) -> 1.078 m). Reason carefully about the geometry before choosing.
+- ONLY when no axial depth dimension is shown anywhere, estimate Depth = 0.6 x aperture diameter;
+  and if a stated packaging depth is smaller than 0.6 x aperture diameter, use the packaging
+  depth instead. Give the EXACT product of this multiplication — do NOT round it. For example
+  0.6 x 2.4 = 1.44 (write 1.44, NOT 1.4); 0.6 x 1.8 = 1.08 (write 1.08, NOT 1.1).

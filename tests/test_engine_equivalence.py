@@ -78,12 +78,13 @@ def test_config_driven_writer_matches_default(golden_rows):
     """The workflow's config-built xlsx writer must be byte-identical to the default writer."""
     import io
 
-    from antenna_reader.config import TEMPLATE_PATH
+    from antenna_reader import settings
     from antenna_reader.workbook import write_populated
 
+    template = settings.template_path()
     wf = get_workflow("antenna")
     via_config = io.BytesIO()
-    wf.write_output(wf.template_path, golden_rows, via_config)
+    wf.write_output(template, golden_rows, via_config)
     via_default = io.BytesIO()
-    write_populated(TEMPLATE_PATH, golden_rows, via_default)
+    write_populated(template, golden_rows, via_default)
     assert via_config.getvalue() == via_default.getvalue()

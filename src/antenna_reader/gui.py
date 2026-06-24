@@ -77,8 +77,14 @@ class MainWindow(QtWidgets.QWidget):
         top.addWidget(self.path_lbl, 1)
         top.addWidget(QtWidgets.QLabel("Type:"))
         self.type_combo = QtWidgets.QComboBox()
+        # Only SUPPORTED types are selectable. Unsupported ones (e.g. Lens) stay in the config
+        # and prompting for later, but are not offered here and are blocked on detection.
+        self._unsupported = set()
         for p in self.workflow.extras.get("profiles", []):
-            self.type_combo.addItem(p["label"], p["key"])
+            if p.get("supported", True):
+                self.type_combo.addItem(p["label"], p["key"])
+            else:
+                self._unsupported.add(p["key"])
         self.type_combo.setEnabled(False)
         top.addWidget(self.type_combo)
         self.extract_btn = QtWidgets.QPushButton("Re-extract with type")
@@ -126,8 +132,8 @@ class MainWindow(QtWidgets.QWidget):
 
     def _refresh_config(self):
         s = settings.summary()
-        extract = settings.extract_model_override() or self.workflow.model
-        classify = settings.classify_model_override() or self.workflow.extras.get("classify_model")
+        extract = self.workflow.model
+        classify = self.workflow.extras.get("classify_model")
         self.config_lbl.setText(
             f"Batch sheet: {s['batch_sheet']}    |    extract: {extract}    "
             f"classify: {classify}    |    API key: "
@@ -157,19 +163,40 @@ class MainWindow(QtWidgets.QWidget):
         self.open_btn.setEnabled(False)
         # Step 1 of 2: classify. _on_classified chains straight into step 2 (extract).
         self._busy("Step 1 of 2 — Identifying antenna type…")
-        self._run(lambda: classify_datasheet(self.pdf_bytes, self.workflow,
-                                             model=settings.classify_model_override()),
+        self._run(lambda: classify_datasheet(self.pdf_bytes, self.workflow),
                   self._on_classified)
 
     def _on_classified(self, result):
         self.detected = result
+        c = result.get("cost") or {}
+
+        # Unsupported type (e.g. a Matsing / lens antenna): do NOT extract — tell the user.
+        if result.get("key") in self._unsupported:
+            label = result.get("label") or "this"
+            self.detect_lbl.setText(
+                f"Detected type: <b>{label}</b> "
+                f"(classify ${c.get('cost_usd', 0):.4f}) — {result.get('reason', '')}")
+            self.result_lbl.setText(
+                f"<span style='color:#b00;font-size:14px;'><b>This tool cannot process "
+                f"{label} antennas yet.</b></span><br><br>"
+                "Lens antennas (e.g. Matsing) are not supported in this version — too much of the "
+                "data has to be read from the manufacturer datasheet by hand.<br><br>"
+                "If this was misclassified, pick the correct type above and click "
+                "“Re-extract with type”. Otherwise choose a different datasheet.")
+            self.cost_lbl.setText(f"classify ${c.get('cost_usd', 0):.4f}")
+            self.status_lbl.setText(f"Unsupported antenna type: {label}.")
+            # Allow a manual override in case of misclassification, but nothing was extracted.
+            self.browse_btn.setEnabled(True)
+            self.type_combo.setEnabled(True)
+            self.extract_btn.setEnabled(True)
+            return
+
         idx = self.type_combo.findData(result.get("key"))
         if idx >= 0:
             self.type_combo.setCurrentIndex(idx)   # combo is still disabled during processing
-        # If the router's answer didn't map to one of the four types, fall back to the
-        # current selection so extraction always runs with a valid profile.
+        # If the router's answer didn't map to a supported type, fall back to the current
+        # selection so extraction always runs with a valid profile.
         key, label = self.type_combo.currentData(), self.type_combo.currentText()
-        c = result.get("cost") or {}
         shown = result.get("label") or f"{label} (uncertain)"
         self.detect_lbl.setText(
             f"Detected type: <b>{shown}</b> "
@@ -190,8 +217,7 @@ class MainWindow(QtWidgets.QWidget):
         def work():
             s = DatasheetSession(self.workflow, self.pdf_bytes, source="EMSS",
                                  profile_key=key, profile_label=label,
-                                 classify_cost=(self.detected or {}).get("cost"),
-                                 model=settings.extract_model_override())
+                                 classify_cost=(self.detected or {}).get("cost"))
             s.extract()
             return s            # extraction only — the (cheap, lock-prone) save is separate
 

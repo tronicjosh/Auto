@@ -67,8 +67,7 @@ def test_write_produces_dropdown_preserving_xlsx(monkeypatch, tmp_path):
 
 def test_settings_read_from_env(monkeypatch, tmp_path):
     monkeypatch.setenv("IXUS_BATCH_SHEET", str(tmp_path / "sheet.xlsx"))
-    monkeypatch.setenv("IXUS_EXTRACT_MODEL", "claude-opus-4-8")
+    monkeypatch.setenv("IXUS_TEMPLATE", str(tmp_path / "template.xlsx"))
     assert settings.batch_sheet_path() == tmp_path / "sheet.xlsx"
-    assert settings.extract_model_override() == "claude-opus-4-8"      # env override
-    assert settings.classify_model_override() is None                  # not set -> workflow default
+    assert settings.template_path() == tmp_path / "template.xlsx"
     assert "batch_sheet" in settings.summary() and "api_key_set" in settings.summary()

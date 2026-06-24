@@ -1,7 +1,6 @@
 """Call the Claude API: PDF (base64 document block) -> strict-JSON extraction dict."""
 
 import base64
-import datetime
 import json
 import os
 import re
@@ -9,7 +8,7 @@ import sys
 
 import anthropic
 
-from .config import DEFAULT_MODEL, MAX_TOKENS, PROJECT_ROOT
+from .config import DEFAULT_MODEL, MAX_TOKENS
 from .prompt import build_extraction_prompt
 
 
@@ -88,14 +87,7 @@ def _scan_balanced_json(text: str):
 
 
 def _log_parse_failure(text: str) -> None:
-    """Persist the unparseable reply so the failure can be diagnosed (not guessed)."""
-    try:
-        d = PROJECT_ROOT / "conversations" / "_parse_failures"
-        d.mkdir(parents=True, exist_ok=True)
-        stamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S_%f")
-        (d / f"{stamp}.txt").write_text(text, encoding="utf-8")
-    except Exception:
-        pass
+    """Report the unparseable reply to stderr so the failure can be diagnosed."""
     print(f"[parse_model_json] FAILED to parse model reply (len={len(text)}). "
           f"head={text[:120]!r} tail={text[-120:]!r}", file=sys.stderr, flush=True)
 

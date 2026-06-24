@@ -43,6 +43,19 @@ def test_750_reaches_into_higher_gain_neighbour():
     assert rows[0]["Vertical HPBW [deg]"] == "9.5"
 
 
+def test_equal_gain_tie_break_picks_wider_horizontal_beamwidth():
+    # 850 (824-894) overlaps two columns with the SAME gain (16.0); the wider HBW (65) wins,
+    # and its matched vertical beamwidth comes with it.
+    data = {"datasheet_bands": [
+        {"min_mhz": 824, "max_mhz": 894, "gain_dbi": 16.0, "hbw_deg": 65, "vbw_deg": 8},
+        {"min_mhz": 880, "max_mhz": 960, "gain_dbi": 16.0, "hbw_deg": 60, "vbw_deg": 8.5},
+    ]}
+    rows = select_overlapping_band_gains([_row("850 MHz band")], data, BANDS, SPEC)
+    assert rows[0]["Gain [dBi]"] == "16"
+    assert rows[0]["Horizontal HPBW [deg]"] == "65"   # wider HBW wins the gain tie
+    assert rows[0]["Vertical HPBW [deg]"] == "8"
+
+
 def test_non_overlapping_columns_are_ignored():
     data = {"datasheet_bands": [
         {"min_mhz": 824, "max_mhz": 894, "gain_dbi": 15.0, "hbw_deg": 65, "vbw_deg": 8},
@@ -50,6 +63,44 @@ def test_non_overlapping_columns_are_ignored():
     ]}
     rows = select_overlapping_band_gains([_row("850 MHz band")], data, BANDS, SPEC)
     assert rows[0]["Gain [dBi]"] == "15"  # not the higher 18.0 from the non-overlapping column
+
+
+def test_non_overlapping_standard_band_is_dropped():
+    # The model wrongly added a 750 band, but the datasheet only covers the 850 band.
+    # 750 (703-803) overlaps no transcribed column -> the row is excluded entirely.
+    data = {"datasheet_bands": [
+        {"min_mhz": 824, "max_mhz": 894, "gain_dbi": 15.0, "hbw_deg": 65, "vbw_deg": 8},
+    ]}
+    rows = select_overlapping_band_gains(
+        [_row("750 MHz", gain="13", hbw="60", vbw="9"), _row("850 MHz band")], data, BANDS, SPEC)
+    assert [r["Frequency"] for r in rows] == ["850 MHz band"]  # 750 dropped, 850 kept
+    assert rows[0]["Gain [dBi]"] == "15"
+
+
+def test_omitted_overlapping_band_is_added_cloning_sibling_port_group():
+    # One datasheet column (780-900) overlaps BOTH the 750 and 850 IXUS bands, but the model only
+    # emitted 750. The 850 band must be ADDED, cloning 750's port group (they share the column).
+    data = {"datasheet_bands": [
+        {"min_mhz": 780, "max_mhz": 900, "gain_dbi": 16.0, "hbw_deg": 60, "vbw_deg": 8},
+    ]}
+    row750 = {"Frequency": "750 MHz", "Section Ports": "1,2", "Number of Ports": "2",
+              "Tilts [0,1,2,3]": "2 to 8", "Azimuth Rotation": "0",
+              "Gain [dBi]": "", "Horizontal HPBW [deg]": "", "Vertical HPBW [deg]": ""}
+    rows = select_overlapping_band_gains([dict(row750)], data, BANDS, SPEC)
+    freqs = [r["Frequency"] for r in rows]
+    assert "850 MHz band" in freqs                  # the omitted overlapping band was added
+    added = next(r for r in rows if r["Frequency"] == "850 MHz band")
+    assert added["Section Ports"] == "1,2"          # port group cloned from the 750 sibling
+    assert added["Number of Ports"] == "2"
+    assert added["Tilts [0,1,2,3]"] == "2 to 8"     # tilts cloned too
+    assert added["Gain [dBi]"] == "16"              # gain from the overlapping column
+
+
+def test_omitted_band_not_added_without_a_sibling_to_clone_from():
+    # Only a Custom row exists (no standard-band sibling), so a band cannot be added safely.
+    data = {"datasheet_bands": [{"min_mhz": 780, "max_mhz": 900, "gain_dbi": 16, "hbw_deg": 60, "vbw_deg": 8}]}
+    rows = select_overlapping_band_gains([_row("Custom", gain="9.9")], data, BANDS, SPEC)
+    assert [r["Frequency"] for r in rows] == ["Custom"]   # nothing invented
 
 
 def test_custom_and_unknown_bands_keep_model_values():

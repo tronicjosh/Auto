@@ -4,6 +4,29 @@ from antenna_reader import schema
 from antenna_reader.workflows import get_workflow
 
 
+def test_model_slash_is_reformatted_to_dash():
+    # '/' breaks the downstream file-path program, so the live workflow stores it as '-'.
+    wf = get_workflow("antenna")
+    data = {"manufacturer": "Kathrein", "model": "KRE 101 2524/1MU", "type": "panel",
+            "sections": [{"frequency": "750 MHz", "ports": "1"}]}
+    rows, _ = wf.build_rows(data, {"source": ["EMSS"], "frequency": ["750 MHz"], "type": ["panel"]})
+    assert rows[0]["Model"] == "KRE 101 2524-1MU"
+
+
+def test_decimal_comma_becomes_dot_in_numeric_cells_only():
+    # European-style decimals ("12,5") are normalised to "12.5"; list commas are untouched.
+    wf = get_workflow("antenna")
+    data = {"manufacturer": "M", "model": "X", "type": "panel",
+            "sections": [{"frequency": "Custom", "minFreqHz": "1", "maxFreqHz": "2",
+                          "gain_dbi": "12,5", "hbw_deg": "7,3", "vbw_deg": "8",
+                          "ports": "1,2", "tilts": "2,6", "azimuth": "0"}]}
+    rows, _ = wf.build_rows(data, {"source": ["EMSS"], "frequency": ["Custom"], "type": ["panel"]})
+    assert rows[0]["Gain [dBi]"] == "12.5"
+    assert rows[0]["Horizontal HPBW [deg]"] == "7.3"
+    assert rows[0]["Section Ports"] == "1,2"        # list comma preserved
+    assert rows[0]["Tilts [0,1,2,3]"] == "2,6"      # discrete-tilt list comma preserved
+
+
 def test_antenna_workflow_loads_from_config_files():
     wf = get_workflow("antenna")
     assert wf is not None and wf.enabled
@@ -35,7 +58,7 @@ def test_build_prompt_is_profile_aware():
     v = {"frequency": ["750 MHz"], "type": ["panel", "parabolic reflector"],
          "manufacturers": ["CommScope"]}
     p = wf.build_prompt(v, "parabolic")
-    assert "Parabolic reflector" in p and "dish diameter" in p   # parabolic profile spliced in
+    assert "Parabolic reflector" in p and "boresight" in p       # parabolic profile spliced in
     assert "rectangular radome" not in p                         # panel rules NOT present
     assert "Respond ONLY with JSON" in p
     assert "[[" not in p

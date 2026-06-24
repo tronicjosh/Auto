@@ -26,6 +26,9 @@ MODEL
   that are identical except for a polarisation-state suffix (e.g. it lists both "854HVH90D-SX"
   AND "854HVH90D-SY") — only then drop that suffix and use the common base ("854HVH90D"). If just
   one model name appears, the previous rule applies: use it verbatim.
+- If the TOP of the datasheet shows two model-name options side by side and nothing in the
+  datasheet identifies one as the correct/applicable choice (and they are not the
+  polarisation-suffix case above), default to the LEFT-most / top-left name.
 
 PORTS
 - "ports" = the physical connector numbers feeding THIS entry (this frequency band + beam),
@@ -35,6 +38,11 @@ PORTS
 - A single physical connector is ONE port. Two RECEIVE ports shown together under the same
   frequency (e.g. "Rx1" and "Rx2") are receive diversity on ONE connector — list it as one
   port, not two.
+- A DUAL-POLARISED band must have at LEAST two ports — one feed per polarisation — even when the
+  datasheet gives no explicit port count. Dual polarisation is indicated by things like "dual
+  polarity", "dual-pol", "±45°", "+45/-45", "X-pol", "cross-polar", or "H+V". When the ports are
+  not listed for such a band, default to two ports (e.g. "1,2"). A single-polarised band has one
+  port unless the datasheet shows more.
 - The same connector number must not appear in two entries of the same frequency.
 
 FREQUENCY
@@ -48,6 +56,11 @@ FREQUENCY
   all four are included.)
 - A wide datasheet band can overlap several IXUS bands — include each overlapping IXUS band as
   its own entry.
+- The SYSTEM makes the final inclusion decision from the transcribed datasheet columns: it
+  removes any IXUS band that does not overlap a column, and ADDS any band that does overlap but
+  you missed. So the most important thing is that "datasheet_bands" is COMPLETE and accurate —
+  the band set is computed from it. Still list the bands you can in "sections" (so their ports
+  and tilts are captured), but it is the column transcription that ultimately decides coverage.
 - You do NOT need to choose the gain or beamwidths when an IXUS band overlaps several datasheet
   columns — the SYSTEM does that for you. Instead, transcribe EVERY frequency column/band shown
   on the datasheet into the "datasheet_bands" list: its frequency range in MHz (min_mhz,

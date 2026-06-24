@@ -5,7 +5,8 @@
 # generated output
 output/
 
-# logged web sessions (may contain proprietary datasheets)
+# proprietary datasheets / the IXUS template are supplied at runtime, never committed
+data/
 conversations/
 
 # runtime backups (workbook .bak from vocab write-back) + scratch scripts

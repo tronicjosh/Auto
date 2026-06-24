@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-# Default extraction model (configurable via the CLI --model flag).
+# Library fallback only — the antenna workflow sets its own model in meta.json ("model").
 DEFAULT_MODEL = "claude-sonnet-4-6"
 
 # Default model for the cheap antenna-type classification pass (the router).
@@ -11,8 +11,8 @@ DEFAULT_CLASSIFY_MODEL = "claude-haiku-4-5"
 # src/antenna_reader/config.py -> project root is two parents up from the package dir.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-TEMPLATE_PATH = PROJECT_ROOT / "data" / "template" / "IXUS_antenna_batch_processor2 1.xlsx"
-OUTPUT_DIR = PROJECT_ROOT / "output"
+# The source workbook (dropdowns/structure) is NOT bundled with the project — it is supplied at
+# runtime via the IXUS_TEMPLATE environment variable (see settings.template_path()).
 
 # Sheet (inside the workbook) we populate. Resolved by name at write time, so the
 # physical sheetN.xml path is discovered dynamically rather than hard-coded.
