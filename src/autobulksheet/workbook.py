@@ -141,6 +141,44 @@ def _extend_validation(xml: str, last_row: int, columns, last_template_row, exte
     return xml
 
 
+def _reset_descriptions_to_base(xml: str, columns, first_data_row, last_template_row, extend) -> str:
+    """Return the Descriptions sheet reset to the empty-template state, so a workbook that ALREADY
+    has antenna rows can be re-filled in place: values cleared (cell styles kept), any rows
+    appended by a prior larger run dropped, and the dimension/dropdown ranges shrunk back to base.
+
+    Everything else — the dropdowns (x14 validations), other sheets, formatting — is left exactly
+    as-is. On an already-empty template every step matches nothing, so it is a no-op.
+    """
+    last_col = column_letter(len(columns))
+
+    # 1. Drop rows appended beyond the styled template rows (from a previous larger run).
+    xml = re.sub(r'<row r="(\d+)"[^>]*>.*?</row>',
+                 lambda m: "" if int(m.group(1)) > last_template_row else m.group(0),
+                 xml, flags=re.DOTALL)
+
+    # 2. Clear values from the data cells (>= first_data_row), preserving each cell's style.
+    def _clear(m):
+        col, row, attrs = m.group(1), int(m.group(2)), m.group(3)
+        if row < first_data_row:
+            return m.group(0)  # header / above the data area
+        sm = re.search(r'\s+s="\d+"', attrs)
+        return f'<c r="{col}{row}"{sm.group(0) if sm else ""}/>'
+    xml = re.sub(r'<c r="([A-R]+)(\d+)"([^>]*?)>(?:<v>.*?</v>|<is>.*?</is>)</c>',
+                 _clear, xml, flags=re.DOTALL)
+
+    # 3. Shrink the dimension + dropdown ranges back to base (inverse of _extend_validation).
+    xml = re.sub(rf'<dimension ref="A1:{last_col}\d+"/>',
+                 f'<dimension ref="A1:{last_col}{last_template_row}"/>', xml)
+    for col in extend.get("extend_columns", []):
+        xml = re.sub(rf'<xm:sqref>{col}2:{col}\d+</xm:sqref>',
+                     f'<xm:sqref>{col}2:{col}{last_template_row}</xm:sqref>', xml)
+    for sp in extend.get("extend_special", []):
+        tmpl_re = re.escape(sp["template"]).replace(re.escape("{last}"), r"\d+")
+        xml = re.sub(rf'<xm:sqref>{tmpl_re}</xm:sqref>',
+                     f'<xm:sqref>{sp["find"]}</xm:sqref>', xml)
+    return xml
+
+
 def patch_descriptions_xml(sheet_xml: str, rows: list[dict], columns=COLUMNS,
                            numeric_columns=NUMERIC_COLUMNS, first_data_row=FIRST_DATA_ROW,
                            last_template_row=LAST_TEMPLATE_ROW, extend=None) -> str:
@@ -177,11 +215,13 @@ def patch_descriptions_xml(sheet_xml: str, rows: list[dict], columns=COLUMNS,
 
 def write_populated(template_path, rows: list[dict], out_path, *, columns=None,
                     numeric_columns=None, sheet_name=None, output_spec=None):
-    """Copy the template workbook to `out_path`, with `rows` written into the target sheet.
+    """Write `rows` into the target sheet of the workbook, preserving everything else.
 
-    `out_path` may be a filesystem path or a binary file-like object (e.g. BytesIO). Every
-    zip member is preserved byte-for-byte except the one worksheet XML. The column contract,
-    sheet name, and dropdown-range growth all come from config (defaults reproduce antenna).
+    `out_path` may be a filesystem path or a binary file-like object (e.g. BytesIO), and it may
+    be the SAME file as `template_path` (update-in-place): the workbook is read fully into memory
+    first, then the Descriptions sheet is reset to empty (clearing any existing antenna rows while
+    keeping the dropdowns/structure) and re-filled. Every other zip member is preserved
+    byte-for-byte. Column contract, sheet name, and range growth all come from config.
     """
     columns = columns or COLUMNS
     numeric_columns = NUMERIC_COLUMNS if numeric_columns is None else numeric_columns
@@ -192,23 +232,29 @@ def write_populated(template_path, rows: list[dict], out_path, *, columns=None,
     extend = {"extend_columns": spec.get("extend_columns", _DEFAULT_EXTEND["extend_columns"]),
               "extend_special": spec.get("extend_special", _DEFAULT_EXTEND["extend_special"])}
 
+    # Read every member into memory FIRST, so out_path may safely be the same file as
+    # template_path — we never hold the input open while writing the output.
     with zipfile.ZipFile(template_path, "r") as zin:
         sheet_path = _find_descriptions_sheet_path(zin, sheet_name)
-        new_sheet = patch_descriptions_xml(
-            zin.read(sheet_path).decode("utf-8"), rows, columns, numeric_columns,
-            first, last_tmpl, extend,
-        ).encode("utf-8")
+        members = [(info, zin.read(info.filename)) for info in zin.infolist()]
 
-        with zipfile.ZipFile(out_path, "w") as zout:
-            for info in zin.infolist():
-                data = new_sheet if info.filename == sheet_path else zin.read(info.filename)
-                # Preserve member name, order, timestamp and compression.
-                zi = zipfile.ZipInfo(info.filename, date_time=info.date_time)
-                zi.compress_type = info.compress_type
-                zi.external_attr = info.external_attr
-                zi.internal_attr = info.internal_attr
-                zi.create_system = info.create_system
-                zout.writestr(zi, data)
+    base_xml = _reset_descriptions_to_base(
+        next(d for i, d in members if i.filename == sheet_path).decode("utf-8"),
+        columns, first, last_tmpl, extend)
+    new_sheet = patch_descriptions_xml(base_xml, rows, columns, numeric_columns,
+                                       first, last_tmpl, extend).encode("utf-8")
+
+    with zipfile.ZipFile(out_path, "w") as zout:
+        for info, data in members:
+            if info.filename == sheet_path:
+                data = new_sheet
+            # Preserve member name, order, timestamp and compression.
+            zi = zipfile.ZipInfo(info.filename, date_time=info.date_time)
+            zi.compress_type = info.compress_type
+            zi.external_attr = info.external_attr
+            zi.internal_attr = info.internal_attr
+            zi.create_system = info.create_system
+            zout.writestr(zi, data)
     return out_path
 
 
