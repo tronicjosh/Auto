@@ -2,7 +2,7 @@
 the code picks the highest-gain OVERLAPPING column per IXUS band and uses its matched set.
 This is the logic the LLM kept getting wrong — here it is exact and tested."""
 
-from antenna_reader.engine import select_overlapping_band_gains
+from autobulksheet.engine import select_overlapping_band_gains
 
 # IXUS bands (name -> Hz), a subset.
 BANDS = [

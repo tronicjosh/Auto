@@ -5,23 +5,20 @@ loaded automatically if python-dotenv is installed). Nothing here contains a sec
 key lives only in the environment.
 
     ANTHROPIC_API_KEY     the Claude API key (required to run extraction)
-    IXUS_BATCH_SHEET      full path to the batch-sheet .xlsx to populate IN PLACE
-                          (prod: C:\\alphawave\\...\\IXUS_antenna_batch_processor.xlsx)
+    IXUS_BATCH_SHEET      full path to the batch-sheet .xlsx to populate IN PLACE (the output)
     IXUS_TEMPLATE         the source workbook (dropdowns/hidden sheets) extraction copies from
-    IXUS_DATASHEET_ROOT   folder the "browse for datasheet folder" picker opens at
+    IXUS_DATASHEET_ROOT   folder the "browse for datasheet" picker opens at (optional)
 
-The extraction/classification MODELS are not configured here — they live in the workflow config
-(workflow_configs/antenna/meta.json: "model" / "classify_model"), so the model travels with the
-prompts it was tuned for.
+The extraction/classification MODELS are not configured here — they live in the config
+(config/meta.json: "model" / "classify_model"), so the model travels with the prompts it was
+tuned for.
 """
 
 import os
 from pathlib import Path
 
-# Dev default while running locally in the vscode project; in production this is the env var.
-_DEV_BATCH_SHEET = Path.home() / "Desktop" / "CAD" / "IXUS_antenna_batch.xlsx"
-
-# Shown when IXUS_TEMPLATE is unset, so the missing-template error is self-explanatory.
+# Shown when a required path env var is unset, so the missing-file error is self-explanatory.
+_BATCH_UNSET = "IXUS_BATCH_SHEET-is-not-set.xlsx"
 _TEMPLATE_UNSET = "IXUS_TEMPLATE-is-not-set.xlsx"
 
 
@@ -34,8 +31,8 @@ def has_api_key() -> bool:
 
 
 def batch_sheet_path() -> Path:
-    """The .xlsx that gets populated in place (overwritten on every change)."""
-    return Path(os.environ.get("IXUS_BATCH_SHEET", str(_DEV_BATCH_SHEET)))
+    """The .xlsx the tool populates (the output), set via IXUS_BATCH_SHEET."""
+    return Path(os.environ.get("IXUS_BATCH_SHEET", _BATCH_UNSET))
 
 
 def template_path() -> Path:

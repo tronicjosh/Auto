@@ -1,7 +1,7 @@
 import re
 
-from antenna_reader import schema
-from antenna_reader.workflows import get_workflow
+from autobulksheet import schema
+from autobulksheet.workflows import get_workflow
 
 
 def test_model_slash_is_reformatted_to_dash():
@@ -39,7 +39,7 @@ def test_antenna_workflow_loads_from_config_files():
     assert "bands" in specs and specs["bands"]["inject_tag"] == "[[BANDS]]"
     assert wf.extras["section_data"].get("bands")
     assert wf.ui.get("header_title")
-    assert wf.extras["config_dir"].replace("\\", "/") == "workflow_configs/antenna"
+    assert wf.extras["config_dir"].replace("\\", "/") == "config"
 
 
 def test_prompt_built_from_file_injects_vocab_and_sections():

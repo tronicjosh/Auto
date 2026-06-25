@@ -1,6 +1,6 @@
 import pytest
 
-from antenna_reader.extract import ExtractionError, parse_model_json
+from autobulksheet.extract import ExtractionError, parse_model_json
 
 
 def test_raw_json():

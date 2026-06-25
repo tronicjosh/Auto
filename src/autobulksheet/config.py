@@ -8,7 +8,7 @@ DEFAULT_MODEL = "claude-sonnet-4-6"
 # Default model for the cheap antenna-type classification pass (the router).
 DEFAULT_CLASSIFY_MODEL = "claude-haiku-4-5"
 
-# src/antenna_reader/config.py -> project root is two parents up from the package dir.
+# src/autobulksheet/config.py -> project root is two parents up from the package dir.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # The source workbook (dropdowns/structure) is NOT bundled with the project — it is supplied at

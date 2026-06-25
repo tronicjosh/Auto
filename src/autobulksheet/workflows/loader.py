@@ -1,10 +1,10 @@
-"""Build a Workflow from external config files — so a workflow's definition (its text,
-prompt, columns, and structured edge-case tables) lives in `workflow_configs/<id>/`,
-not in code.
+"""Build a Workflow from external config files — so the tool's definition (its text,
+prompt, columns, and structured edge-case tables) lives in the `config/` folder, not in code.
 
-A config folder contains:
-    meta.json     identity, on-screen text (ui), columns, rules, and `config_sections`
-    prompt.txt    the AI instruction note, with tags filled in at call time:
+The config folder contains:
+    meta.json        identity, on-screen text (ui), columns, rules, and `config_sections`
+    base_prompt.txt  the AI instruction note (set via meta's `prompt_base`), tags filled at
+                     call time:
                   one [[<KEY>_VOCAB]] tag per controlled vocabulary the reader returns
                   (e.g. [[FREQUENCY_VOCAB]], [[TYPE_VOCAB]], [[MANUFACTURERS_VOCAB]]) and
                   one tag per declared config section (e.g. [[BANDS]])
@@ -27,7 +27,7 @@ from ..vocab import read_vocabularies
 from ..workbook import write_populated
 from .base import Workflow
 
-CONFIG_ROOT = PROJECT_ROOT / "workflow_configs"
+CONFIG_ROOT = PROJECT_ROOT / "config"
 
 _TAG_RE = re.compile(r"\[\[[A-Z0-9_]+\]\]")  # leftover tags get cleared so none reach the model
 
@@ -164,7 +164,6 @@ def load_workflow(config_dir, *, read_vocab=None, sections_to_rows=None, validat
         output_sheet_name=meta["output_sheet_name"],
         columns=columns,
         numeric_columns=numeric_columns,
-        diff_key_columns=list(meta["diff_key_columns"]),
         read_vocab=read_vocab,
         build_prompt=build_prompt,
         sections_to_rows=sections_to_rows,

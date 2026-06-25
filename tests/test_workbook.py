@@ -3,8 +3,8 @@ import re
 import zipfile
 from pathlib import Path
 
-from antenna_reader import settings
-from antenna_reader.workbook import verify_output, write_populated
+from autobulksheet import settings
+from autobulksheet.workbook import verify_output, write_populated
 
 TEMPLATE_PATH = settings.template_path()   # the fixture workbook (IXUS_TEMPLATE set in conftest)
 

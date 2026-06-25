@@ -1,5 +1,5 @@
-from antenna_reader.schema import COLUMNS
-from antenna_reader.validate import validate_rows
+from autobulksheet.schema import COLUMNS
+from autobulksheet.validate import validate_rows
 
 VOCAB = {
     "frequency": ["Custom", "750 MHz", "850 MHz band", "1800 MHz band",

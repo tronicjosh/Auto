@@ -4,7 +4,7 @@ green means every prompt still assembles (schema intact, vocab injected, no dang
 No API calls — this only checks how the prompt renders.
 """
 
-from antenna_reader.workflows import get_workflow
+from autobulksheet.workflows import get_workflow
 
 VOCAB = {"frequency": ["750 MHz", "Custom"],
          "type": ["panel", "omni", "parabolic reflector", "custom"],

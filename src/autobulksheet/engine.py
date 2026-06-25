@@ -1,15 +1,14 @@
 """Config-driven engine: generic row mapping + validation, composed from named blocks.
 
-A workflow declares, in its config:
+The config (config/meta.json) declares:
   * mapping_spec — for each output column, where its value comes from (a section field, a
     root field, an override, or a constant) and an optional named transform; and which list
     field is expanded one-row-per-item (`row_source`).
   * rules_spec  — a list of validation rules: declarative ones (in_vocab, equals_count,
     only_when) and named checks (tilt_range, gain_plausibility, ports_unique_per_group).
 
-The transforms/checks are a shared registry — the engine's reusable building blocks. New
-logic is added here once (named) and referenced from any workflow's config by name. No
-per-workflow Python is needed for the common case.
+The transforms/checks are a shared registry — the engine's reusable building blocks, referenced
+from the config by name. The engine stays generic; the antenna behaviour is all config.
 """
 
 import math

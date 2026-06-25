@@ -1,10 +1,8 @@
-"""The Workflow abstraction.
+"""The Workflow object: the tool's config bundled with the function hooks that run it.
 
-A Workflow is a registry of *config + function hooks* that share one engine shape.
-Generic data (columns, model, template, prompt builder) is declarative; the complex,
-already-tested logic (vocab reading, row expansion, validation, workbook writing) is
-referenced as callables on the proven modules. Adding a new workflow = a new instance,
-not a rewrite of the app.
+It holds the declarative config (columns, model, ui text) alongside callables into the engine
+(vocab reading, row mapping, validation, the workbook writer). The loader builds it from the
+`config/` files, so the behaviour is config-driven and this class itself stays generic.
 """
 
 from dataclasses import dataclass, field
@@ -15,7 +13,7 @@ from ..engine import dot_decimals
 
 @dataclass(frozen=True)
 class Workflow:
-    # --- identity / landing-page framing ---
+    # --- identity ---
     id: str
     title: str
     description: str
@@ -25,7 +23,6 @@ class Workflow:
     output_sheet_name: str
     columns: list
     numeric_columns: frozenset
-    diff_key_columns: list           # stable columns used to align rows for the diff
 
     # --- function hooks into the proven modules ---
     read_vocab: Callable             # (template_path) -> vocab dict
@@ -42,7 +39,8 @@ class Workflow:
     extras: dict = field(default_factory=dict)    # workflow-specific config (bands, rules, ...)
 
     def build_rows(self, data, vocab, manufacturer="", model_name="", source=""):
-        """Mirror of pipeline.build_rows, routed through this workflow's hooks.
+        """Turn the model's JSON into output rows + flags, routed through this workflow's hooks:
+        map -> adjust (band-gain) -> dot-decimals -> validate.
 
         `source` defaults to the first value of the workbook's source vocabulary when the
         caller doesn't supply one — so the default is config, not a hard-coded constant.
@@ -58,6 +56,6 @@ class Workflow:
         return rows, flags
 
     def summary(self) -> dict:
-        """Metadata for the landing page (no callables)."""
+        """Plain metadata view (no callables)."""
         return {"id": self.id, "title": self.title, "description": self.description,
                 "enabled": self.enabled, "ui": self.ui}

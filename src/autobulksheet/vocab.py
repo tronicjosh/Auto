@@ -14,8 +14,8 @@ from openpyxl import load_workbook
 
 from .config import VOCAB_SHEET_NAME
 
-# Antenna's default column map (1-based column -> vocab key). A workflow can override this
-# entirely via its `vocab_spec` config, so this is just the fallback for direct/CLI callers.
+# Antenna's default column map (1-based column -> vocab key). The workflow overrides this via
+# its `vocab_spec` config (see config/meta.json), so this is just a fallback for direct callers.
 _COLUMN_MAP = {
     1: "manufacturers",
     3: "frequency",

@@ -1,53 +1,13 @@
-"""Call the Claude API: PDF (base64 document block) -> strict-JSON extraction dict."""
+"""Robustly pull the strict-JSON extraction object out of a model reply, and define
+ExtractionError — the shared error type for the AI layer."""
 
-import base64
 import json
-import os
 import re
 import sys
-
-import anthropic
-
-from .config import DEFAULT_MODEL, MAX_TOKENS
-from .prompt import build_extraction_prompt
 
 
 class ExtractionError(RuntimeError):
     """Raised when extraction cannot proceed or the model output is unusable."""
-
-
-def extract_from_pdf(pdf_bytes: bytes, vocab: dict, model: str = DEFAULT_MODEL,
-                     api_key: str | None = None) -> dict:
-    """Send the PDF to Claude and return the parsed extraction JSON."""
-    api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ExtractionError("ANTHROPIC_API_KEY is not set in the environment.")
-
-    client = anthropic.Anthropic(api_key=api_key)
-    prompt = build_extraction_prompt(vocab.get("frequency", []), vocab.get("type", []))
-    pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
-
-    response = client.messages.create(
-        model=model,
-        max_tokens=MAX_TOKENS,
-        messages=[{
-            "role": "user",
-            "content": [
-                {
-                    "type": "document",
-                    "source": {
-                        "type": "base64",
-                        "media_type": "application/pdf",
-                        "data": pdf_b64,
-                    },
-                },
-                {"type": "text", "text": prompt},
-            ],
-        }],
-    )
-
-    text = "".join(b.text for b in response.content if b.type == "text").strip()
-    return parse_model_json(text)
 
 
 _FENCE_RE = re.compile(r"```(?:json)?\s*(\{.*\})\s*```", re.DOTALL)

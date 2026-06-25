@@ -4,10 +4,10 @@ Pick a datasheet PDF -> the tool classifies the antenna type (you confirm/correc
 extracts -> writes the populated batch sheet IN PLACE at the configured path. Long-running
 model calls run on a worker thread so the window never freezes.
 
-Stage 1 has no in-app table: the result goes straight to the batch sheet, and you open that
-file to review it. The table view returns in stage 2 alongside the chat-refine feature.
+There is no in-app table: the result goes straight to the batch sheet, and you open that file
+to review it.
 
-Run:  python -m antenna_reader.gui     (needs ANTHROPIC_API_KEY in env / .env)
+Run:  python -m autobulksheet.gui     (needs ANTHROPIC_API_KEY in env / .env)
 
 This GUI imports only the decoupled core (settings + session). The core never imports the GUI,
 so the same logic drops into the production PyQt5 repo unchanged.
@@ -100,8 +100,8 @@ class MainWindow(QtWidgets.QWidget):
         self.detect_lbl.setWordWrap(True)
         root.addWidget(self.detect_lbl)
 
-        # No table in stage 1 — the result is written straight to the batch sheet, which the
-        # user opens to review. The table view returns in stage 2 with the chat-refine feature.
+        # No in-app table — the result is written straight to the batch sheet, which the user
+        # opens to review.
         self.result_lbl = QtWidgets.QLabel("")
         self.result_lbl.setWordWrap(True)
         self.result_lbl.setTextFormat(QtCore.Qt.RichText)

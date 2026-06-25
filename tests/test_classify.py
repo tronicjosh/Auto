@@ -1,4 +1,4 @@
-from antenna_reader.classify import _match_profile
+from autobulksheet.classify import _match_profile
 
 PROFILES = [{"key": "panel", "label": "Panel"}, {"key": "omni", "label": "Omni"},
             {"key": "lens", "label": "Lens"},

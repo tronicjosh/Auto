@@ -1,6 +1,6 @@
-from antenna_reader.rows import sections_to_rows
-from antenna_reader.schema import COLUMNS
-from antenna_reader.util import (
+from autobulksheet.rows import sections_to_rows
+from autobulksheet.schema import COLUMNS
+from autobulksheet.util import (
     normalize_ports,
     normalize_tilt,
     parse_ports,

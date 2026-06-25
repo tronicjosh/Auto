@@ -1,7 +1,7 @@
 {
   "id": "antenna",
   "title": "Antenna Datasheet → IXUS Batch Sheet",
-  "description": "Extract a base-station antenna datasheet PDF into the IXUS RF-EMF batch workbook — validated, refine-by-chat, dropdowns preserved.",
+  "description": "Extract a base-station antenna datasheet PDF into the IXUS RF-EMF batch workbook — validated, dropdowns preserved.",
   "enabled": true,
   "model": "claude-opus-4-8",
   "classify_model": "claude-haiku-4-5",
@@ -86,11 +86,7 @@
   },
   "ui": {
     "header_title": "Antenna Datasheet Editor",
-    "header_subtitle": "Upload a base-station antenna datasheet, review the AI's draft, refine it by chat, and export the batch sheet.",
-    "upload_label": "Antenna datasheet (PDF)",
-    "table_title": "Extracted antenna rows",
-    "chat_title": "Refine with the model",
-    "chat_subtitle": "Describe what to change; the AI re-runs with the datasheet in context. Approve or revert each change."
+    "header_subtitle": "Read a base-station antenna datasheet and populate the IXUS batch sheet."
   },
   "columns": [
     "Antenna Source",
@@ -124,11 +120,6 @@
     "Width/ Diameter [m]",
     "Depth/ Spacing [m]",
     "Aperture Diameter [m]"
-  ],
-  "diff_key_columns": [
-    "Frequency",
-    "Section Ports",
-    "Azimuth Rotation"
   ],
   "rules": [
     "Frequency must be one of the workbook's allowed bands.",

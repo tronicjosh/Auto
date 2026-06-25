@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "antenna-reader"
+name = "autobulksheet"
 version = "0.1.0"
 description = "Read EMSS base-station antenna datasheets (PDF) into the IXUS batch Excel sheet via the Claude API."
 requires-python = ">=3.10"
@@ -18,7 +18,7 @@ dotenv = ["python-dotenv>=1"]
 gui = ["PyQt5>=5.15"]
 
 [project.scripts]
-antenna-reader-gui = "antenna_reader.gui:run_gui"
+autobulksheet-gui = "autobulksheet.gui:run_gui"
 
 [tool.setuptools.packages.find]
 where = ["src"]

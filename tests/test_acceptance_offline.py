@@ -1,5 +1,5 @@
-from antenna_reader.rows import sections_to_rows
-from antenna_reader.schema import COLUMNS
+from autobulksheet.rows import sections_to_rows
+from autobulksheet.schema import COLUMNS
 
 
 def _key(row):

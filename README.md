@@ -1,4 +1,4 @@
-# Antenna Reader
+# AutoBulkSheet
 
 A desktop tool that reads a base-station antenna **datasheet PDF** with the Claude API and
 writes the electrical spec, ports, tilts and dimensions into the **IXUS batch workbook** — into
@@ -55,11 +55,11 @@ Everything the engineers tune lives in config, not code:
 
 | To change… | Edit |
 |---|---|
-| The AI models | `workflow_configs/antenna/meta.json` → `"model"` (extract), `"classify_model"` (router) |
-| Universal extraction rules | `workflow_configs/antenna/base_prompt.txt` |
-| Per-type rules | `workflow_configs/antenna/profiles/{panel,omni,parabolic,lens}.txt` |
-| How types are classified | `workflow_configs/antenna/router_prompt.txt` |
-| IXUS frequency bands (min/max) | `workflow_configs/antenna/bands.json` |
+| The AI models | `config/meta.json` → `"model"` (extract), `"classify_model"` (router) |
+| Universal extraction rules | `config/base_prompt.txt` |
+| Per-type rules | `config/profiles/{panel,omni,parabolic,lens}.txt` |
+| How types are classified | `config/router_prompt.txt` |
+| IXUS frequency bands (min/max) | `config/bands.json` |
 | Column mapping / validation / guardrails | `meta.json` → `mapping_spec`, `rules_spec`, `type_guardrails`, `band_gain_spec` |
 | Paths + API key | `.env` |
 
@@ -102,15 +102,15 @@ tested — that's what the human review and prompt-tuning cover.
 
 ```
 run.py                       launcher (loads .env, preflight, opens the GUI)
-src/antenna_reader/
+src/autobulksheet/
   gui.py                     PyQt5 desktop UI
-  session.py                 GUI-agnostic core: one datasheet's extract/refine/write
+  session.py                 GUI-agnostic core: one datasheet's extract + write
   settings.py                env-driven config (paths, key)
   classify.py extract.py     the AI passes (router + extraction)
   engine.py                  config-driven mapping, validation, band-gain selection
   workbook.py vocab.py       the zip-patch writer + live vocab reader
   rows.py validate.py        frozen "oracle" the engine is regression-tested against
   workflows/                 the Workflow abstraction + the config loader
-workflow_configs/antenna/    meta.json + prompts + profiles + bands.json
+config/    meta.json + prompts + profiles + bands.json
 tests/                       offline tests + fixtures
 ```

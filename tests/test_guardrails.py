@@ -1,4 +1,4 @@
-from antenna_reader.engine import apply_type_guardrails
+from autobulksheet.engine import apply_type_guardrails
 
 _COLS = ["Tilts [0,1,2,3]", "Number of Ports", "Aperture Diameter [m]",
          "Horizontal HPBW [deg]", "Vertical HPBW [deg]", "Azimuth Rotation"]

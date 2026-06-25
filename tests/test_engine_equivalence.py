@@ -7,15 +7,14 @@ silently drift from the verified behaviour.
 
 import json
 
-from antenna_reader.config import PROJECT_ROOT
-from antenna_reader.engine import generic_map_rows, generic_validate
-from antenna_reader.rows import sections_to_rows
-from antenna_reader.schema import COLUMNS
-from antenna_reader.validate import validate_rows
-from antenna_reader.workflows import get_workflow
+from autobulksheet.config import PROJECT_ROOT
+from autobulksheet.engine import generic_map_rows, generic_validate
+from autobulksheet.rows import sections_to_rows
+from autobulksheet.schema import COLUMNS
+from autobulksheet.validate import validate_rows
+from autobulksheet.workflows import get_workflow
 
-_META = json.loads((PROJECT_ROOT / "workflow_configs" / "antenna" / "meta.json")
-                   .read_text(encoding="utf-8"))
+_META = json.loads((PROJECT_ROOT / "config" / "meta.json").read_text(encoding="utf-8"))
 MAPPING_SPEC = _META["mapping_spec"]
 RULES_SPEC = _META["rules_spec"]
 
@@ -78,8 +77,8 @@ def test_config_driven_writer_matches_default(golden_rows):
     """The workflow's config-built xlsx writer must be byte-identical to the default writer."""
     import io
 
-    from antenna_reader import settings
-    from antenna_reader.workbook import write_populated
+    from autobulksheet import settings
+    from autobulksheet.workbook import write_populated
 
     template = settings.template_path()
     wf = get_workflow("antenna")

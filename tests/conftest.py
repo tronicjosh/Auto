@@ -9,13 +9,13 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 # The template is no longer bundled in the project — production supplies it via IXUS_TEMPLATE.
 # Point the env var at the fixture workbook so the writer/vocab tests have a real one to use.
-# (setdefault runs at conftest import, before any test imports antenna_reader.)
+# (setdefault runs at conftest import, before any test imports autobulksheet.)
 os.environ.setdefault("IXUS_TEMPLATE", str(FIXTURES / "ixus_template.xlsx"))
 
 
 @pytest.fixture
 def template_path():
-    from antenna_reader import settings
+    from autobulksheet import settings
     return settings.template_path()
 
 
@@ -35,5 +35,5 @@ def commscope_json():
 
 @pytest.fixture
 def vocab(template_path):
-    from antenna_reader.vocab import read_vocabularies
+    from autobulksheet.vocab import read_vocabularies
     return read_vocabularies(template_path)

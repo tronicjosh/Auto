@@ -13,10 +13,10 @@ variables (see `.env.example`):
     IXUS_BATCH_SHEET    the .xlsx the tool populates in place
     IXUS_TEMPLATE       the empty source workbook to copy the dropdowns from (required)
 
-The models are set in the workflow config (workflow_configs/antenna/meta.json), not here.
+The models are set in the config (config/meta.json), not here.
 
 This is only a thin entry point — it adds no behaviour of its own and imports the same package
-the CLI/GUI use, so it stays correct as the tool evolves.
+the GUI uses, so it stays correct as the tool evolves.
 """
 
 import sys
@@ -37,8 +37,8 @@ except Exception:
 
 
 def main() -> int:
-    from antenna_reader import settings
-    from antenna_reader.workflows import get_workflow
+    from autobulksheet import settings
+    from autobulksheet.workflows import get_workflow
 
     wf = get_workflow("antenna")
     template = settings.template_path()
@@ -64,7 +64,7 @@ def main() -> int:
         print("         Set IXUS_TEMPLATE to the IXUS batch workbook (the dropdown source).")
 
     try:
-        from antenna_reader.gui import run_gui
+        from autobulksheet.gui import run_gui
     except ImportError as exc:
         print()
         print(f"ERROR: could not load the GUI ({exc}).")
